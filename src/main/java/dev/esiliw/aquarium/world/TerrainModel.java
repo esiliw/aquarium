@@ -26,7 +26,10 @@ public final class TerrainModel {
     /**
      * top = y of the highest solid block, waterTop = y of the highest water block (or MIN_VALUE).
      */
-    public record Column(int top, int waterTop, double elevation, Cover cover, boolean ocean, boolean lake, double lat) {
+    public record Column(int top, int waterTop, double elevation, Cover cover, boolean ocean, boolean lake, double lat, byte way) {
+        public Column(int top, int waterTop, double elevation, Cover cover, boolean ocean, boolean lake, double lat) {
+            this(top, waterTop, elevation, cover, ocean, lake, lat, dev.esiliw.aquarium.data.OsmWays.NONE);
+        }
     }
 
     /** y of the top solid block for a given elevation */
@@ -134,6 +137,6 @@ public final class TerrainModel {
         Cover cover = this.data.cover(lat, lon);
         if (cover == Cover.WATER) cover = Cover.NO;
         int top = this.surfaceY(Math.max(0.5, e + 0.35 * vs * dev.esiliw.aquarium.data.Noise.smooth(x / 9.0, z / 9.0, 31)));
-        return new Column(top, Integer.MIN_VALUE, e, cover, false, false, lat);
+        return new Column(top, Integer.MIN_VALUE, e, cover, false, false, lat, w.way());
     }
 }

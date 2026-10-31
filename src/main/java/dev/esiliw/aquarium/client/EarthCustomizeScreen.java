@@ -29,6 +29,7 @@ public class EarthCustomizeScreen extends Screen {
     private EditBox scaleBox, verticalBox, startBox;
     private GeoProjection.Type projection;
     private EarthData.Source source;
+    private boolean ways;
     private Button doneButton;
     private Component status = Component.empty();
     private boolean searching;
@@ -39,6 +40,7 @@ public class EarthCustomizeScreen extends Screen {
         this.initial = initial;
         this.projection = initial.projectionType();
         this.source = initial.dataSource();
+        this.ways = initial.osmWays();
     }
 
     @Override
@@ -81,6 +83,9 @@ public class EarthCustomizeScreen extends Screen {
                 .withValues(EarthData.Source.OPEN, EarthData.Source.TERRARIUM)
                 .withInitialValue(this.source)
                 .create(labelX, y, 310, 20, Component.translatable("aquarium.customize.data"), (b, v) -> this.source = v));
+        y += 24;
+        this.addRenderableWidget(CycleButton.onOffBuilder(this.ways)
+                .create(labelX, y, 310, 20, Component.translatable("aquarium.customize.ways"), (b, v) -> this.ways = v));
 
         this.doneButton = this.addRenderableWidget(Button.builder(Component.translatable("gui.done"), b -> this.done())
                 .bounds(cx - 155, this.height - 28, 150, 20).build());
@@ -157,7 +162,7 @@ public class EarthCustomizeScreen extends Screen {
     private void apply(double scale, double vertical, double lat, double lon) {
         if (this.projection == GeoProjection.Type.MERCATOR) lat = Math.max(-GeoProjection.MERCATOR_MAX_LAT, Math.min(GeoProjection.MERCATOR_MAX_LAT, lat));
         EarthSettings s = new EarthSettings(scale, vertical, 0, this.initial.seaLevel(), this.initial.minY(), this.initial.height(),
-                lat, lon, this.projection, this.source, this.initial.osmSnapshot());
+                lat, lon, this.projection, this.source, this.initial.osmSnapshot(), this.ways);
         this.parent.getUiState().updateDimensions((registries, dimensions) ->
                 dimensions.replaceOverworldGenerator(registries, new EarthChunkGenerator(registries.lookupOrThrow(Registries.BIOME), s)));
         this.minecraft.setScreen(this.parent);
@@ -178,7 +183,7 @@ public class EarthCustomizeScreen extends Screen {
         g.drawString(this.font, Component.translatable("aquarium.customize.vertical"), labelX, 72, 0xE0E0E0);
         g.drawString(this.font, Component.translatable("aquarium.customize.start"), labelX, 98, 0xE0E0E0);
 
-        int y = 40 + 26 + 26 + 30 + 24 + 30;
+        int y = 40 + 26 + 26 + 30 + 24 + 24 + 30;
         double scale = this.scale();
         if (scale > 0) {
             double vertical = this.vertical(scale);

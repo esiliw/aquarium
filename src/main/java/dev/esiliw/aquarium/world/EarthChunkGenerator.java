@@ -59,6 +59,13 @@ public class EarthChunkGenerator extends ChunkGenerator {
     private static final BlockState RED_SAND = Blocks.RED_SAND.defaultBlockState();
     private static final BlockState TERRACOTTA = Blocks.TERRACOTTA.defaultBlockState();
     private static final BlockState WATER = Blocks.WATER.defaultBlockState();
+    // road & rail guide
+    private static final BlockState ROAD_MAJOR = Blocks.BLACK_CONCRETE.defaultBlockState();
+    private static final BlockState ROAD_SECONDARY = Blocks.GRAY_CONCRETE.defaultBlockState();
+    private static final BlockState ROAD_MINOR = Blocks.DIRT_PATH.defaultBlockState();
+    private static final BlockState RAIL_LINE = Blocks.POLISHED_ANDESITE.defaultBlockState();
+    private static final BlockState TRAM_LINE = Blocks.YELLOW_TERRACOTTA.defaultBlockState();
+    private static final BlockState STATION = Blocks.RED_CONCRETE.defaultBlockState();
 
     public final EarthSettings settings;
     private final GeoProjection projection;
@@ -154,7 +161,18 @@ public class EarthChunkGenerator extends ChunkGenerator {
                 boolean underwater = c.waterTop() != Integer.MIN_VALUE && top < c.waterTop();
 
                 BlockState surface, under;
-                if (underwater) {
+                if (!underwater && c.way() != dev.esiliw.aquarium.data.OsmWays.NONE) {
+                    surface = switch (c.way()) {
+                        case dev.esiliw.aquarium.data.OsmWays.MAJOR -> ROAD_MAJOR;
+                        case dev.esiliw.aquarium.data.OsmWays.SECONDARY -> ROAD_SECONDARY;
+                        case dev.esiliw.aquarium.data.OsmWays.MINOR -> ROAD_MINOR;
+                        case dev.esiliw.aquarium.data.OsmWays.RAIL_BED -> GRAVEL;
+                        case dev.esiliw.aquarium.data.OsmWays.TRAM -> TRAM_LINE;
+                        case dev.esiliw.aquarium.data.OsmWays.RAIL_LINE -> RAIL_LINE;
+                        default -> STATION;
+                    };
+                    under = surface == ROAD_MINOR ? DIRT : surface == GRAVEL ? GRAVEL : STONE;
+                } else if (underwater) {
                     int depth = c.waterTop() - top;
                     if (c.ocean()) surface = depth > 30 ? GRAVEL : SAND;
                     else surface = depth <= 2 ? SAND : (depth <= 6 ? GRAVEL : MUD);

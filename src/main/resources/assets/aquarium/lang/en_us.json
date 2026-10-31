@@ -11,5 +11,6 @@
   "aquarium.customize.projection.equirectangular": "Original Terrarium (stretched)",
   "aquarium.customize.data": "Data",
   "aquarium.customize.data.open": "Open data (AWS, ESA, OSM)",
-  "aquarium.customize.data.terrarium": "Terrarium server (gegy)"
+  "aquarium.customize.data.terrarium": "Terrarium server (gegy)",
+  "aquarium.customize.ways": "Road & rail guide (OSM, open data only)"
 }

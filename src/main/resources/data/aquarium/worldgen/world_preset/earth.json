@@ -14,7 +14,8 @@
           "spawn_lon": 13.0038,
           "projection": "mercator",
           "data_source": "open",
-          "osm_snapshot": "20261025_080012_pt"
+          "osm_snapshot": "20261025_080012_pt",
+          "osm_ways": true
         }
       }
     },

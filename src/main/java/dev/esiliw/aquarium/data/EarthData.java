@@ -31,7 +31,11 @@ public final class EarthData {
     }
 
     public static EarthData get(double worldScale, Source source, String osmSnapshot) {
-        return SHARED.computeIfAbsent(worldScale + "/" + source + "/" + osmSnapshot, k -> new EarthData(worldScale, source, osmSnapshot));
+        return get(worldScale, source, osmSnapshot, false);
+    }
+
+    public static EarthData get(double worldScale, Source source, String osmSnapshot, boolean osmWays) {
+        return SHARED.computeIfAbsent(worldScale + "/" + source + "/" + osmSnapshot + "/" + osmWays, k -> new EarthData(worldScale, source, osmSnapshot, osmWays));
     }
 
     private final Source source;
@@ -59,13 +63,13 @@ public final class EarthData {
         }
     };
 
-    private EarthData(double worldScale, Source source, String osmSnapshot) {
+    private EarthData(double worldScale, Source source, String osmSnapshot, boolean osmWays) {
         this.source = source;
         if (source == Source.OPEN) {
             this.aws = new AwsElevation(AwsElevation.zoomFor(worldScale), 256);
             this.awsCoarse = new AwsElevation(6, 16);
             this.worldCover = new WorldCover(worldScale);
-            this.osm = new OsmWater(osmSnapshot, worldScale);
+            this.osm = new OsmWater(osmSnapshot, worldScale, osmWays);
             this.awsLevel = new AwsElevation(Math.min(12, AwsElevation.zoomFor(worldScale)), 64);
             this.awsSea = new AwsElevation(8, 16);
         } else {
