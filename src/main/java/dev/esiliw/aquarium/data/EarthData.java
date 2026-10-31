@@ -108,6 +108,11 @@ public final class EarthData {
         int gw = (int) Math.round(GeoTileSource.globalWidth(zoom));
         int gh = (int) Math.round(GeoTileSource.globalHeight(zoom));
         double fx = GeoProjection.pixelX(lon, zoom) - 0.5, fy = GeoProjection.pixelY(lat, zoom) - 0.5;
+        // same edge roughening as the land cover, so water bodies don't trace the square data pixels
+        double jx = 0.45 * Noise.smooth(fx * 1.7, fy * 1.7, 15) + 0.2 * Noise.smooth(fx * 5.1, fy * 5.1, 16);
+        double jy = 0.45 * Noise.smooth(fx * 1.7, fy * 1.7, 17) + 0.2 * Noise.smooth(fx * 5.1, fy * 5.1, 18);
+        fx += jx;
+        fy += jy;
         int x0 = (int) Math.floor(fx), y0 = (int) Math.floor(fy);
         double tx = fx - x0, ty = fy - y0;
         double frac = 0, wsum = 0, level = Double.NaN, dist = 0, best = -1, marine = 0;
