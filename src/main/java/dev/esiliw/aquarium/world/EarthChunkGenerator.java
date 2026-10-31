@@ -64,6 +64,7 @@ public class EarthChunkGenerator extends ChunkGenerator {
     private final GeoProjection projection;
     private final EarthData data;
     private final EarthBiomeSource earthBiomes;
+    private final TerrainModel terrain;
 
     public EarthChunkGenerator(HolderGetter<Biome> biomes, EarthSettings settings) {
         this(new EarthBiomeSource(biomes, settings), settings);
@@ -75,6 +76,7 @@ public class EarthChunkGenerator extends ChunkGenerator {
         this.settings = settings;
         this.projection = settings.projection();
         this.data = settings.createData();
+        this.terrain = new TerrainModel(settings, this.projection, this.data);
     }
 
     public GeoProjection projection() {
@@ -97,64 +99,16 @@ public class EarthChunkGenerator extends ChunkGenerator {
         return this.data.elevation(this.projection.lat(z + 0.5), this.projection.lon(x + 0.5));
     }
 
-    /** y of the top solid block for a given elevation */
     public int surfaceY(double elevation) {
-        double y = elevation / this.settings.verticalScale();
-        int sea = this.settings.seaLevel();
-        int top;
-        if (elevation < 0) {
-            top = sea - 1 + (int) Math.floor(y);           // sea floor is always at least 1 block under water
-            top = Math.min(top, sea - 2);
-        } else {
-            top = sea + (int) Math.floor(y) + this.settings.heightOffset();
-        }
-        return Math.max(this.settings.minY() + 1, Math.min(this.settings.maxY() - 1, top));
+        return this.terrain.surfaceY(elevation);
     }
 
     public int surfaceYAt(int x, int z) {
-        return this.column(x, z).top;
+        return this.column(x, z).top();
     }
 
-    /**
-     * Everything about one block column.
-     * top = y of the highest solid block, waterTop = y of the highest water block (or MIN_VALUE),
-     * shore = y that must stay solid next to a lake so it doesn't spill (MIN_VALUE if none).
-     */
-    public record Column(int top, int waterTop, double elevation, Cover cover, boolean ocean, boolean lake, double lat) {
-    }
-
-    public Column column(int x, int z) {
-        double lat = this.projection.lat(z + 0.5), lon = this.projection.lon(x + 0.5);
-        double e = this.data.elevation(lat, lon);
-        int sea = this.settings.seaLevel();
-
-        Boolean outline = this.data.oceanAt(lat, lon);
-        boolean ocean = outline != null ? outline : e < 0;
-        if (ocean) {
-            e = Math.min(e, -2.0);                          // coastline from the outlines wins over coarse elevation
-            int top = this.surfaceY(e);
-            return new Column(top, sea - 1, e, Cover.WATER, true, false, lat);
-        }
-        e = Math.max(e, 0.5);                               // land is never below the sea surface
-        Cover cover = this.data.cover(lat, lon);
-        if (cover == Cover.WATER) cover = Cover.NO;         // water comes from the lake model below
-        int top = this.surfaceY(e);
-
-        EarthData.Water w = this.data.water(lat, lon);
-        if (w.fraction() > 0) {
-            int lakeY = this.surfaceY(Math.max(w.level(), 0.5));
-            // the lake only fills ground that really lies below its water level -> shoreline follows the fine terrain
-            boolean isLake = (w.fraction() > 0.1 && e <= w.level() + 1.0) || (w.fraction() > 0.97 && e <= w.level() + 6.0);
-            if (isLake) {
-                double shoreMeters = w.shoreDistance() * this.data.coverPixelMeters() * Math.cos(Math.toRadians(lat));
-                double depthMeters = Math.min(3.0 + shoreMeters * 0.02, 60.0);
-                int depth = Math.max(1, (int) Math.round(depthMeters / this.settings.verticalScale()));
-                int bed = Math.min(top, lakeY - depth);
-                return new Column(bed, lakeY, e, Cover.WATER, false, true, lat);
-            }
-            top = Math.max(top, lakeY);                     // shore next to a lake stays at least at water level
-        }
-        return new Column(top, Integer.MIN_VALUE, e, cover, false, false, lat);
+    public TerrainModel.Column column(int x, int z) {
+        return this.terrain.column(x, z);
     }
 
     // ------------------------------------------------------------------ generation
@@ -172,7 +126,7 @@ public class EarthChunkGenerator extends ChunkGenerator {
         ChunkPos cp = chunk.getPos();
         int x0 = cp.getMinBlockX(), z0 = cp.getMinBlockZ();
         // columns for an 18x18 window so slopes can be measured at the chunk edges
-        Column[] cols = new Column[18 * 18];
+        TerrainModel.Column[] cols = new TerrainModel.Column[18 * 18];
         for (int dz = -1; dz <= 16; dz++) {
             for (int dx = -1; dx <= 16; dx++) {
                 cols[(dx + 1) + (dz + 1) * 18] = this.column(x0 + dx, z0 + dz);
@@ -185,7 +139,7 @@ public class EarthChunkGenerator extends ChunkGenerator {
         for (int lz = 0; lz < 16; lz++) {
             for (int lx = 0; lx < 16; lx++) {
                 int i = (lx + 1) + (lz + 1) * 18;
-                Column c = cols[i];
+                TerrainModel.Column c = cols[i];
                 int top = c.top();
                 int slope = Math.max(Math.abs(cols[i - 1].top() - cols[i + 1].top()), Math.abs(cols[i - 18].top() - cols[i + 18].top()));
                 Cover cover = c.cover();
@@ -281,7 +235,7 @@ public class EarthChunkGenerator extends ChunkGenerator {
 
     @Override
     public int getBaseHeight(int x, int z, Heightmap.Types type, LevelHeightAccessor level, RandomState random) {
-        Column c = this.column(x, z);
+        TerrainModel.Column c = this.column(x, z);
         if (type == Heightmap.Types.OCEAN_FLOOR || type == Heightmap.Types.OCEAN_FLOOR_WG) return c.top() + 1;
         return Math.max(c.top(), c.waterTop()) + 1;
     }
@@ -291,7 +245,7 @@ public class EarthChunkGenerator extends ChunkGenerator {
         int minY = level.getMinBuildHeight();
         int height = level.getHeight();
         BlockState[] column = new BlockState[height];
-        Column c = this.column(x, z);
+        TerrainModel.Column c = this.column(x, z);
         for (int i = 0; i < height; i++) {
             int y = minY + i;
             if (y <= c.top()) column[i] = y == minY ? BEDROCK : STONE;
@@ -305,7 +259,7 @@ public class EarthChunkGenerator extends ChunkGenerator {
     public void addDebugScreenInfo(List<String> info, RandomState random, BlockPos pos) {
         double lat = this.projection.lat(pos.getZ() + 0.5), lon = this.projection.lon(pos.getX() + 0.5);
         info.add(String.format(Locale.ROOT, "Aquarium: %.5f, %.5f  scale 1:%s", lat, lon, trim(this.settings.worldScale())));
-        Column c = this.column(pos.getX(), pos.getZ());
+        TerrainModel.Column c = this.column(pos.getX(), pos.getZ());
         info.add("Cover: " + c.cover().name().toLowerCase(Locale.ROOT)
                 + String.format(Locale.ROOT, "  elevation %.0f m", c.elevation()) + (c.ocean() ? "  ocean" : c.lake() ? "  lake" : ""));
     }

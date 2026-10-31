@@ -92,7 +92,7 @@ public final class GeoCommands {
         CompletableFuture.supplyAsync(() -> {
             int x = (int) Math.floor(g.projection().blockX(lon));
             int z = (int) Math.floor(g.projection().blockZ(lat));
-            EarthChunkGenerator.Column c = g.column(x, z);
+            dev.esiliw.aquarium.world.TerrainModel.Column c = g.column(x, z);
             int y = Math.max(c.top(), c.waterTop()) + 2;
             return new int[]{x, y, z};
         }, Aquarium.IO_EXECUTOR).thenAccept(p -> src.getServer().execute(() -> {
@@ -122,7 +122,7 @@ public final class GeoCommands {
                         .withHoverEvent(new HoverEvent(HoverEvent.Action.SHOW_TEXT, Component.literal("Open in OpenStreetMap"))))),
                 false);
         CompletableFuture.supplyAsync(() -> {
-                    EarthChunkGenerator.Column c = g.column((int) Math.floor(x), (int) Math.floor(z));
+                    dev.esiliw.aquarium.world.TerrainModel.Column c = g.column((int) Math.floor(x), (int) Math.floor(z));
                     return String.format(Locale.ROOT, "Elevation %.0f m, land cover: %s%s, world scale 1:%s", c.elevation(),
                             c.cover().name().toLowerCase(Locale.ROOT), c.ocean() ? " (ocean)" : c.lake() ? " (lake)" : "",
                             EarthChunkGenerator.trim(g.settings.worldScale()));

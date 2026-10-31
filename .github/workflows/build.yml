@@ -30,7 +30,8 @@ jobs:
           git config user.name "aquarium-ci"; git config user.email "ci@users.noreply.github.com"
           git checkout --orphan diag-out
           git rm -rfq --cached . >/dev/null
-          git add -f diag-summary.txt
+          mkdir -p diag-png && cp build/diag/*.png diag-png/ 2>/dev/null || true
+          git add -f diag-summary.txt diag-png
           git commit -qm "diagnostics for ${GITHUB_SHA::7}"
           git push -qf origin diag-out:diag
       - name: report errors

@@ -20,7 +20,7 @@ public final class SpawnHandler {
         if (flag.done) return;
         int x = (int) Math.floor(g.projection().blockX(g.settings.spawnLon()));
         int z = (int) Math.floor(g.projection().blockZ(g.settings.spawnLat()));
-        EarthChunkGenerator.Column c = g.column(x, z);
+        TerrainModel.Column c = g.column(x, z);
         int y = Math.max(c.top(), c.waterTop()) + 1;
         level.setDefaultSpawnPos(new BlockPos(x, y, z), 0.0F);
         flag.done = true;
