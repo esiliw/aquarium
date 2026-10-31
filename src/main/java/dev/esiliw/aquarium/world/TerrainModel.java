@@ -66,14 +66,16 @@ public final class TerrainModel {
         e = Math.max(e, 0.5);
         Cover cover = this.data.cover(lat, lon);
         if (cover == Cover.WATER) cover = Cover.NO;
-        int top = this.surfaceY(e);
+        // a little dither before rounding to blocks, so flat land doesn't show the data pixels as square 1-block terraces
+        int top = this.surfaceY(e + 0.35 * this.settings.verticalScale() * dev.esiliw.aquarium.data.Noise.smooth(x / 9.0, z / 9.0, 31));
 
         EarthData.Water w = this.data.water(lat, lon);
         if (w.fraction() > 0) {
             // same convention as the sea: the water surface sits one block under ground at that elevation,
             // so lakes near sea level end up exactly at the sea's height instead of one block above it
             int lakeY = this.surfaceY(Math.max(w.level(), 0.5)) - 1;
-            boolean isLake = (w.fraction() > 0.1 && e <= w.level() + 1.0) || (w.fraction() > 0.97 && e <= w.level() + 6.0);
+            // anywhere near land-cover water that lies below the lake level is flooded (no raised walls around lakes)
+            boolean isLake = e <= w.level() + 1.0 || (w.fraction() > 0.97 && e <= w.level() + 6.0);
             if (isLake) {
                 double shoreMeters = w.shoreDistance() * this.data.coverPixelMeters() * Math.cos(Math.toRadians(lat));
                 double depthMeters = Math.min(3.0 + shoreMeters * 0.02, 60.0);
