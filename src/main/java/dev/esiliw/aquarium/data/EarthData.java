@@ -28,7 +28,7 @@ public final class EarthData {
     private final java.util.Map<Long, LakeTile> lakes = new java.util.LinkedHashMap<>(32, 0.75f, true) {
         @Override
         protected boolean removeEldestEntry(java.util.Map.Entry<Long, LakeTile> e) {
-            return this.size() > 24;
+            return this.size() > 12;
         }
     };
 

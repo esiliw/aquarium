@@ -22,19 +22,19 @@ public final class TerrariumRasterReader {
     public static final int FORMAT_BYTE = 1;
     public static final int FORMAT_SHORT = 2;
 
-    /** Decoded raster: values stored as int, row-major. */
+    /** Decoded raster, row-major. Stored as shorts (every Terrarium layer fits) to halve memory. */
     public static final class Raster {
         public final int width, height;
-        public final int[] values;
+        public final short[] values;
 
         Raster(int width, int height) {
             this.width = width;
             this.height = height;
-            this.values = new int[width * height];
+            this.values = new short[width * height];
         }
 
         public int get(int x, int y) {
-            return this.values[x + y * this.width];
+            return this.values[x + y * this.width];   // UBYTE layers are 0..255, SHORT layers are signed
         }
     }
 
@@ -117,7 +117,7 @@ public final class TerrariumRasterReader {
             for (int x = 0; x < w; x++) {
                 int dx = chunkX + x;
                 if (dx < 0 || dx >= dst.width) continue;
-                dst.values[dx + dy * dst.width] = out[x + y * w];
+                dst.values[dx + dy * dst.width] = (short) out[x + y * w];
             }
         }
     }

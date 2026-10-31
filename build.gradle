@@ -25,6 +25,7 @@ dependencies {
 
 test {
 	useJUnitPlatform()
+    maxHeapSize = '3g'
 	testLogging { showStandardStreams = true }
 	environment "AQUARIUM_DIAG", System.getenv("AQUARIUM_DIAG") ?: ""
 
