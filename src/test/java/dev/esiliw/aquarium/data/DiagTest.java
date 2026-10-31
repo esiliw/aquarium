@@ -55,6 +55,14 @@ public class DiagTest {
         sb = new StringBuilder();
         for (double lon = -157.2; lon <= -155.9; lon += 0.05) sb.append(String.format(Locale.ROOT, "%.0f/%.0f ", d40.elevation(19.6, lon), d40.bathymetry(19.6, lon)));
         d("profile off Hawaii W-E (fine/filled): %s", sb);
+        for (double mpp : new double[]{10, 40}) {
+            WorldCover wc = new WorldCover(mpp);
+            String[][] pts = {{"Halle centre (urban)", "51.4820", "11.9700"}, {"Hufeisensee (water)", "51.4840", "12.0300"},
+                    {"Geiseltalsee (water)", "51.2950", "11.8800"}, {"Harz forest", "51.7500", "10.6000"}, {"Sahara (bare)", "25.0", "10.0"},
+                    {"Amazon (tree)", "-3.0", "-60.0"}, {"Matterhorn (snow)", "45.9763", "7.6586"}, {"open Atlantic", "40.0", "-40.0"}};
+            for (String[] p : pts) d("WorldCover %.0f m: %-22s class %d -> %s", mpp, p[0], wc.classAt(Double.parseDouble(p[1]), Double.parseDouble(p[2])),
+                    wc.cover(Double.parseDouble(p[1]), Double.parseDouble(p[2])));
+        }
         for (int z : new int[]{10, 13, 15}) {
             AwsElevation aws = new AwsElevation(z, 64);
             sb = new StringBuilder();

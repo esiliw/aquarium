@@ -33,6 +33,7 @@ public final class EarthData {
     private final Source source;
     private final AwsElevation aws;          // OPEN: fine elevation + bathymetry
     private final AwsElevation awsCoarse;    // OPEN: coarse elevation for whole-cell decisions
+    private final WorldCover worldCover;     // OPEN: 10 m land cover
 
     public Source source() {
         return this.source;
@@ -56,9 +57,11 @@ public final class EarthData {
         if (source == Source.OPEN) {
             this.aws = new AwsElevation(AwsElevation.zoomFor(worldScale), 256);
             this.awsCoarse = new AwsElevation(6, 16);
+            this.worldCover = new WorldCover(worldScale);
         } else {
             this.aws = null;
             this.awsCoarse = null;
+            this.worldCover = null;
         }
         this.elevation = new GeoTileSource("elevation2", GeoTileSource.zoomForScale(worldScale, 0, ELEVATION_MAX_ZOOM),
                 TerrariumRasterReader.FORMAT_SHORT, 48);
@@ -205,6 +208,7 @@ public final class EarthData {
     }
 
     public Cover cover(double lat, double lon) {
+        if (this.worldCover != null) return this.worldCover.cover(lat, lon);
         int zoom = this.cover.zoom();
         int w = (int) Math.round(GeoTileSource.globalWidth(zoom));
         int h = (int) Math.round(GeoTileSource.globalHeight(zoom));
