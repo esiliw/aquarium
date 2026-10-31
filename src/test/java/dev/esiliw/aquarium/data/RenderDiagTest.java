@@ -24,6 +24,14 @@ public class RenderDiagTest {
         Place[] places = {
                 new Place("helgoland", 4, 5, 54.170, 7.865, 54.195, 7.925, 1),
                 new Place("geiseltal", 4, 5, 51.255, 11.82, 51.325, 12.00, 2),
+                new Place("niigata", 4, 5, 37.85, 138.95, 38.00, 139.20, 4),          // coast, river mouth, city
+                new Place("geirangerfjord", 4, 5, 62.06, 6.95, 62.16, 7.25, 4),       // fjord, steep mountains
+                new Place("venice_lagoon", 4, 5, 45.35, 12.20, 45.55, 12.50, 4),      // lagoon, islands
+                new Place("nile_delta", 40, 40, 30.0, 30.0, 31.6, 32.4, 4),           // desert, delta, farmland
+                new Place("alps_matterhorn", 4, 5, 45.95, 7.60, 46.05, 7.75, 4),      // high mountains, glaciers
+                new Place("finland_lakes", 40, 40, 61.0, 26.0, 62.5, 29.0, 4),        // thousands of lakes
+                new Place("hawaii_big_island", 40, 40, 18.9, -156.1, 20.3, -154.8, 2), // volcano, steep coast
+                new Place("rio_de_janeiro", 4, 5, -23.00, -43.30, -22.85, -43.10, 4),  // bay, steep hills, southern hemisphere
         };
         for (Place p : places) renderPlace(p, out);
     }
