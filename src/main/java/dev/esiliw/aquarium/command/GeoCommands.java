@@ -92,8 +92,8 @@ public final class GeoCommands {
         CompletableFuture.supplyAsync(() -> {
             int x = (int) Math.floor(g.projection().blockX(lon));
             int z = (int) Math.floor(g.projection().blockZ(lat));
-            double e = g.elevationAt(x, z);
-            int y = Math.max(g.surfaceY(e), e < 0 ? g.getSeaLevel() - 1 : Integer.MIN_VALUE) + 2;
+            EarthChunkGenerator.Column c = g.column(x, z);
+            int y = Math.max(c.top(), c.waterTop()) + 2;
             return new int[]{x, y, z};
         }, Aquarium.IO_EXECUTOR).thenAccept(p -> src.getServer().execute(() -> {
             ServerLevel level = src.getLevel();
@@ -121,9 +121,12 @@ public final class GeoCommands {
                         .withClickEvent(new ClickEvent(ClickEvent.Action.OPEN_URL, maps))
                         .withHoverEvent(new HoverEvent(HoverEvent.Action.SHOW_TEXT, Component.literal("Open in OpenStreetMap"))))),
                 false);
-        CompletableFuture.supplyAsync(() -> String.format(Locale.ROOT, "Elevation %.0f m, land cover: %s, world scale 1:%s",
-                g.elevationAt((int) Math.floor(x), (int) Math.floor(z)), g.data().cover(lat, lon).name().toLowerCase(Locale.ROOT),
-                EarthChunkGenerator.trim(g.settings.worldScale())), Aquarium.IO_EXECUTOR)
+        CompletableFuture.supplyAsync(() -> {
+                    EarthChunkGenerator.Column c = g.column((int) Math.floor(x), (int) Math.floor(z));
+                    return String.format(Locale.ROOT, "Elevation %.0f m, land cover: %s%s, world scale 1:%s", c.elevation(),
+                            c.cover().name().toLowerCase(Locale.ROOT), c.ocean() ? " (ocean)" : c.lake() ? " (lake)" : "",
+                            EarthChunkGenerator.trim(g.settings.worldScale()));
+                }, Aquarium.IO_EXECUTOR)
                 .thenAccept(msg -> src.getServer().execute(() -> src.sendSuccess(() -> Component.literal(msg).withStyle(ChatFormatting.GRAY), false)));
         return 1;
     }

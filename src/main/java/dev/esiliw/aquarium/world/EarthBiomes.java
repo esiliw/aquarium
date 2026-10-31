@@ -25,9 +25,9 @@ public final class EarthBiomes {
     private EarthBiomes() {
     }
 
-    public static ResourceKey<Biome> select(Cover cover, double elevation, double lat) {
+    public static ResourceKey<Biome> select(Cover cover, double elevation, double lat, boolean ocean) {
         double alat = Math.abs(lat);
-        if (elevation < 0 && (cover == Cover.WATER || cover == Cover.NO)) {
+        if (ocean) {
             boolean deep = elevation < -200;
             if (alat > 66) return deep ? Biomes.DEEP_FROZEN_OCEAN : Biomes.FROZEN_OCEAN;
             if (alat > 45) return deep ? Biomes.DEEP_COLD_OCEAN : Biomes.COLD_OCEAN;

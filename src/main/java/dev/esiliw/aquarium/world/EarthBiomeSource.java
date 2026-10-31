@@ -49,11 +49,18 @@ public class EarthBiomeSource extends BiomeSource {
     public Holder<Biome> getNoiseBiome(int quartX, int quartY, int quartZ, Climate.Sampler sampler) {
         double bx = (quartX << 2) + 2, bz = (quartZ << 2) + 2;
         double lat = this.projection.lat(bz), lon = this.projection.lon(bx);
-        return this.biomeAt(lat, lon, this.data.elevation(lat, lon));
-    }
-
-    public Holder<Biome> biomeAt(double lat, double lon, double elevation) {
-        Cover cover = this.data.cover(lat, lon);
-        return this.holders.get(EarthBiomes.select(cover, elevation, lat));
+        double e = this.data.elevation(lat, lon);
+        Boolean outline = this.data.oceanAt(lat, lon);
+        boolean ocean = outline != null ? outline : e < 0;
+        Cover cover;
+        if (ocean) {
+            cover = Cover.WATER;
+            e = Math.min(e, -2.0);
+        } else {
+            cover = this.data.cover(lat, lon);
+            if (cover == Cover.WATER) cover = this.data.water(lat, lon).fraction() >= 0.5 ? Cover.WATER : Cover.GRASSLAND;
+            e = Math.max(e, 0.5);
+        }
+        return this.holders.get(EarthBiomes.select(cover, e, lat, ocean));
     }
 }

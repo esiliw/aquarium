@@ -8,6 +8,11 @@ import dev.esiliw.aquarium.world.EarthBiomeSource;
 import dev.esiliw.aquarium.world.EarthChunkGenerator;
 import dev.esiliw.aquarium.world.SpawnHandler;
 import net.fabricmc.api.ModInitializer;
+import net.fabricmc.fabric.api.biome.v1.BiomeModifications;
+import net.fabricmc.fabric.api.biome.v1.BiomeSelectors;
+import net.fabricmc.fabric.api.biome.v1.ModificationPhase;
+import net.minecraft.data.worldgen.placement.MiscOverworldPlacements;
+import net.minecraft.world.level.levelgen.GenerationStep;
 import net.fabricmc.fabric.api.command.v2.CommandRegistrationCallback;
 import net.fabricmc.fabric.api.event.lifecycle.v1.ServerLifecycleEvents;
 import net.fabricmc.loader.api.FabricLoader;
@@ -46,6 +51,12 @@ public class Aquarium implements ModInitializer {
         CommandRegistrationCallback.EVENT.register((dispatcher, registryAccess, environment) -> GeoCommands.register(dispatcher));
         // after vanilla has picked its own initial spawn, move it to the configured real-world place (once per world)
         ServerLifecycleEvents.SERVER_STARTED.register(server -> SpawnHandler.onWorldLoad(server, server.overworld()));
+        // no lava lakes on (or just under) the real Earth's surface
+        BiomeModifications.create(new ResourceLocation(ID, "no_lava_lakes")).add(ModificationPhase.REMOVALS,
+                BiomeSelectors.foundInOverworld(), ctx -> {
+                    ctx.getGenerationSettings().removeFeature(GenerationStep.Decoration.LAKES, MiscOverworldPlacements.LAKE_LAVA_SURFACE);
+                    ctx.getGenerationSettings().removeFeature(GenerationStep.Decoration.LAKES, MiscOverworldPlacements.LAKE_LAVA_UNDERGROUND);
+                });
         LOGGER.info("Aquarium {} loaded - Earth data from the Terrarium geo3 server", VERSION);
     }
 }

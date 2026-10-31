@@ -23,12 +23,82 @@ public final class EarthData {
 
     private final GeoTileSource elevation;
     private final GeoTileSource cover;
+    private final GeoTileSource coarseElevation;      // elevation on the land-cover grid, for lake levels
+    private final OceanPolygons ocean = new OceanPolygons();
+    private final java.util.Map<Long, LakeTile> lakes = new java.util.LinkedHashMap<>(32, 0.75f, true) {
+        @Override
+        protected boolean removeEldestEntry(java.util.Map.Entry<Long, LakeTile> e) {
+            return this.size() > 24;
+        }
+    };
 
     private EarthData(double worldScale) {
         this.elevation = new GeoTileSource("elevation2", GeoTileSource.zoomForScale(worldScale, 0, ELEVATION_MAX_ZOOM),
                 TerrariumRasterReader.FORMAT_SHORT, 48);
         this.cover = new GeoTileSource("landcover", GeoTileSource.zoomForScale(worldScale, 0, COVER_MAX_ZOOM),
                 TerrariumRasterReader.FORMAT_UBYTE, 24);
+        this.coarseElevation = new GeoTileSource("elevation2", this.cover.zoom(), TerrariumRasterReader.FORMAT_SHORT, 8);
+    }
+
+    /** TRUE/FALSE from the ocean outlines, or null where there are none (use elevation instead). */
+    public Boolean oceanAt(double lat, double lon) {
+        return this.ocean.oceanAt(lat, lon);
+    }
+
+    /** metres per land-cover pixel at the equator */
+    public double coverPixelMeters() {
+        return GeoProjection.EQUATOR_CIRCUMFERENCE / GeoTileSource.globalWidth(this.cover.zoom());
+    }
+
+    private LakeTile lakeTile(int tx, int ty) {
+        long key = ((long) tx << 32) | (ty & 0xFFFFFFFFL);
+        synchronized (this.lakes) {
+            LakeTile t = this.lakes.get(key);
+            if (t != null) return t;
+        }
+        TerrariumRasterReader.Raster c = this.cover.getTile(tx, ty);
+        if (c == null) return null;
+        TerrariumRasterReader.Raster e = this.coarseElevation.getTile(tx, ty);
+        LakeTile t = LakeTile.build(c, Cover.WATER.id, (px, py) -> e == null ? 0 : e.get(px, py));
+        synchronized (this.lakes) {
+            this.lakes.put(key, t);
+        }
+        return t;
+    }
+
+    /** Inland water at a point: fraction of water around it (0..1), the lake's flat level (m) and distance to shore (cover pixels). */
+    public record Water(double fraction, double level, double shoreDistance) {
+        public static final Water NONE = new Water(0, 0, 0);
+    }
+
+    public Water water(double lat, double lon) {
+        int zoom = this.cover.zoom();
+        int gw = (int) Math.round(GeoTileSource.globalWidth(zoom));
+        int gh = (int) Math.round(GeoTileSource.globalHeight(zoom));
+        double fx = GeoProjection.pixelX(lon, zoom) - 0.5, fy = GeoProjection.pixelY(lat, zoom) - 0.5;
+        int x0 = (int) Math.floor(fx), y0 = (int) Math.floor(fy);
+        double tx = fx - x0, ty = fy - y0;
+        double frac = 0, wsum = 0, level = Double.NaN, dist = 0, best = -1;
+        for (int j = 0; j <= 1; j++) {
+            for (int i = 0; i <= 1; i++) {
+                int px = Math.floorMod(x0 + i, gw), py = Math.max(0, Math.min(gh - 1, y0 + j));
+                LakeTile t = this.lakeTile(px / GeoTileSource.TILE_SIZE, py / GeoTileSource.TILE_SIZE);
+                double wgt = (i == 0 ? 1 - tx : tx) * (j == 0 ? 1 - ty : ty);
+                wsum += wgt;
+                if (t == null) continue;
+                int k = (px % GeoTileSource.TILE_SIZE) + (py % GeoTileSource.TILE_SIZE) * t.size;
+                if (t.water[k]) {
+                    frac += wgt;
+                    dist += wgt * t.dist[k];
+                    if (wgt > best) {
+                        best = wgt;
+                        level = t.level[k];
+                    }
+                }
+            }
+        }
+        if (frac <= 0) return Water.NONE;
+        return new Water(frac / wsum, level, dist / frac);
     }
 
     private static int floorDiv(double v) {
