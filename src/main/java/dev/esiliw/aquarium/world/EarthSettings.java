@@ -40,6 +40,21 @@ public record EarthSettings(double worldScale, double verticalScale, int heightO
         }
     }, t -> t.name().toLowerCase(java.util.Locale.ROOT));
 
+    /** default start: Malmö, Sweden */
+    public static final double MALMO_LAT = 55.6050, MALMO_LON = 13.0038;
+    public static final int TALL_MIN_Y = -512, TALL_HEIGHT = 2544;
+
+    /** the settings a new world starts from */
+    public static EarthSettings defaults() {
+        return new EarthSettings(10, autoVerticalScale(10), 0, 63, TALL_MIN_Y, TALL_HEIGHT, MALMO_LAT, MALMO_LON,
+                GeoProjection.Type.MERCATOR, EarthData.Source.OPEN, dev.esiliw.aquarium.data.OsmWater.DEFAULT_SNAPSHOT);
+    }
+
+    /** metres per block vertically when not set: like the horizontal scale, but at least 5 so Mount Everest fits */
+    public static double autoVerticalScale(double worldScale) {
+        return Math.max(5.0, worldScale);
+    }
+
     public static final Codec<EarthSettings> CODEC = RecordCodecBuilder.create(i -> i.group(
             Codec.doubleRange(0.1, 100000).optionalFieldOf("world_scale", 40.0).forGetter(EarthSettings::worldScale),
             Codec.doubleRange(0.1, 100000).optionalFieldOf("vertical_scale", 40.0).forGetter(EarthSettings::verticalScale),
@@ -47,8 +62,8 @@ public record EarthSettings(double worldScale, double verticalScale, int heightO
             Codec.INT.optionalFieldOf("sea_level", 63).forGetter(EarthSettings::seaLevel),
             Codec.INT.optionalFieldOf("min_y", -64).forGetter(EarthSettings::minY),
             Codec.INT.optionalFieldOf("height", 384).forGetter(EarthSettings::height),
-            Codec.doubleRange(-90, 90).optionalFieldOf("spawn_lat", 37.9122).forGetter(EarthSettings::spawnLat),
-            Codec.doubleRange(-180, 180).optionalFieldOf("spawn_lon", 139.0613).forGetter(EarthSettings::spawnLon),
+            Codec.doubleRange(-90, 90).optionalFieldOf("spawn_lat", MALMO_LAT).forGetter(EarthSettings::spawnLat),
+            Codec.doubleRange(-180, 180).optionalFieldOf("spawn_lon", MALMO_LON).forGetter(EarthSettings::spawnLon),
             TYPE_CODEC.optionalFieldOf("projection", GeoProjection.Type.EQUIRECTANGULAR).forGetter(EarthSettings::projectionType),
             SOURCE_CODEC.optionalFieldOf("data_source", EarthData.Source.TERRARIUM).forGetter(EarthSettings::dataSource),
             Codec.STRING.optionalFieldOf("osm_snapshot", dev.esiliw.aquarium.data.OsmWater.DEFAULT_SNAPSHOT).forGetter(EarthSettings::osmSnapshot)

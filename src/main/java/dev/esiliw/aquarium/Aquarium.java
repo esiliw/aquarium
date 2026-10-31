@@ -25,6 +25,8 @@ import org.slf4j.LoggerFactory;
 
 public class Aquarium implements ModInitializer {
     public static final String ID = "aquarium";
+    public static final net.minecraft.resources.ResourceKey<net.minecraft.world.level.levelgen.presets.WorldPreset> EARTH_PRESET =
+            net.minecraft.resources.ResourceKey.create(net.minecraft.core.registries.Registries.WORLD_PRESET, new ResourceLocation(ID, "earth"));
     public static final Logger LOGGER = LoggerFactory.getLogger("Aquarium");
     public static final String VERSION = FabricLoader.getInstance().getModContainer(ID)
             .map(c -> c.getMetadata().getVersion().getFriendlyString()).orElse("dev");

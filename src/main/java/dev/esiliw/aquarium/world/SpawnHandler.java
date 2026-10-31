@@ -13,6 +13,21 @@ public final class SpawnHandler {
     private SpawnHandler() {
     }
 
+    /** called when a new world picks its spawn: put it at the configured place. Returns false for non-Earth worlds. */
+    public static boolean setInitialSpawn(ServerLevel level, net.minecraft.world.level.storage.ServerLevelData data) {
+        if (!(level.getChunkSource().getGenerator() instanceof EarthChunkGenerator g)) return false;
+        int x = (int) Math.floor(g.projection().blockX(g.settings.spawnLon()));
+        int z = (int) Math.floor(g.projection().blockZ(g.settings.spawnLat()));
+        TerrainModel.Column c = g.column(x, z);
+        int y = Math.max(c.top(), c.waterTop()) + 1;
+        data.setSpawn(new BlockPos(x, y, z), 0.0F);
+        Flag flag = level.getDataStorage().computeIfAbsent(Flag::load, Flag::new, "aquarium_spawn");
+        flag.done = true;
+        flag.setDirty();
+        Aquarium.LOGGER.info("Earth world starts at {}, {} -> block {} {} {}", g.settings.spawnLat(), g.settings.spawnLon(), x, y, z);
+        return true;
+    }
+
     public static void onWorldLoad(MinecraftServer server, ServerLevel level) {
         if (level.dimension() != Level.OVERWORLD) return;
         if (!(level.getChunkSource().getGenerator() instanceof EarthChunkGenerator g)) return;

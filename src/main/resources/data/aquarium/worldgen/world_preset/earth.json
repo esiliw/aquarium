@@ -1,17 +1,17 @@
 {
   "dimensions": {
     "minecraft:overworld": {
-      "type": "minecraft:overworld",
+      "type": "aquarium:earth_tall",
       "generator": {
         "type": "aquarium:earth",
         "settings": {
-          "world_scale": 40,
-          "vertical_scale": 40,
+          "world_scale": 10,
+          "vertical_scale": 10,
           "sea_level": 63,
-          "min_y": -64,
-          "height": 384,
-          "spawn_lat": 37.9122,
-          "spawn_lon": 139.0613,
+          "min_y": -512,
+          "height": 2544,
+          "spawn_lat": 55.605,
+          "spawn_lon": 13.0038,
           "projection": "mercator",
           "data_source": "open",
           "osm_snapshot": "20261025_080012_pt"

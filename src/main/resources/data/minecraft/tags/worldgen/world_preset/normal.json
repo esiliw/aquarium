@@ -1,9 +1,6 @@
 {
   "replace": false,
   "values": [
-    "aquarium:earth",
-    "aquarium:earth_10",
-    "aquarium:earth_4",
-    "aquarium:earth_1"
+    "aquarium:earth"
   ]
 }

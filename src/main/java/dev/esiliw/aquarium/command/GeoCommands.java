@@ -77,12 +77,12 @@ public final class GeoCommands {
         EarthChunkGenerator g = earth(src);
         if (g == null) return 0;
         src.sendSuccess(() -> Component.literal("Searching for \"" + place + "\" ...").withStyle(ChatFormatting.GRAY), false);
-        CompletableFuture.supplyAsync(() -> geocode(place), Aquarium.IO_EXECUTOR).thenAccept(result -> {
+        CompletableFuture.supplyAsync(() -> dev.esiliw.aquarium.data.Geocoder.find(place), Aquarium.IO_EXECUTOR).thenAccept(result -> {
             if (result == null) {
                 src.getServer().execute(() -> src.sendFailure(Component.literal("Couldn't find \"" + place + "\".")));
                 return;
             }
-            teleport(src, player, g, result.lat, result.lon, result.name);
+            teleport(src, player, g, result.lat(), result.lon(), result.name());
         });
         return 1;
     }
@@ -132,26 +132,4 @@ public final class GeoCommands {
         return 1;
     }
 
-    private record Place(double lat, double lon, String name) {
-    }
-
-    private static Place geocode(String query) {
-        try {
-            String url = "https://nominatim.openstreetmap.org/search?format=json&limit=1&q=" + URLEncoder.encode(query, StandardCharsets.UTF_8);
-            HttpRequest req = HttpRequest.newBuilder(URI.create(url))
-                    .timeout(Duration.ofSeconds(15))
-                    .header("User-Agent", "Aquarium/" + Aquarium.VERSION + " (Minecraft mod, Fabric port of Terrarium)")
-                    .GET().build();
-            HttpResponse<String> resp = HTTP.send(req, HttpResponse.BodyHandlers.ofString());
-            if (resp.statusCode() != 200) return null;
-            JsonArray arr = JsonParser.parseString(resp.body()).getAsJsonArray();
-            if (arr.isEmpty()) return null;
-            JsonObject o = arr.get(0).getAsJsonObject();
-            String name = o.has("display_name") ? o.get("display_name").getAsString() : query;
-            return new Place(Double.parseDouble(o.get("lat").getAsString()), Double.parseDouble(o.get("lon").getAsString()), name);
-        } catch (Exception e) {
-            Aquarium.LOGGER.warn("Geocoding failed for {}", query, e);
-            return null;
-        }
-    }
 }

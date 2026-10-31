@@ -1,6 +1,15 @@
 {
-  "generator.aquarium.earth": "Earth 1:40 (Aquarium)",
-  "generator.aquarium.earth_10": "Earth 1:10 (Aquarium)",
-  "generator.aquarium.earth_4": "Earth 1:4 (Aquarium)",
-  "generator.aquarium.earth_1": "Earth 1:1 (Aquarium)"
+  "generator.aquarium.earth": "Earth (Aquarium)",
+  "aquarium.customize.title": "Customize Earth",
+  "aquarium.customize.scale": "Scale  1 :",
+  "aquarium.customize.vertical": "Metres per block (height)",
+  "aquarium.customize.vertical.hint": "auto",
+  "aquarium.customize.start": "Start at",
+  "aquarium.customize.start.hint": "place or lat, lon  (empty = Malmö)",
+  "aquarium.customize.projection": "Projection",
+  "aquarium.customize.projection.mercator": "True shapes (Mercator)",
+  "aquarium.customize.projection.equirectangular": "Original Terrarium (stretched)",
+  "aquarium.customize.data": "Data",
+  "aquarium.customize.data.open": "Open data (AWS, ESA, OSM)",
+  "aquarium.customize.data.terrarium": "Terrarium server (gegy)"
 }
