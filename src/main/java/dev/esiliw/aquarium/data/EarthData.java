@@ -40,6 +40,7 @@ public final class EarthData {
     private final WorldCover worldCover;     // OPEN: 10 m land cover
     private final OsmWater osm;              // OPEN: sea, lakes, rivers
     private final AwsElevation awsLevel;     // OPEN: ~40 m elevation for water surface levels
+    private final AwsElevation awsSea;       // OPEN: smooth ~600 m sea floor (the fine tiles are blocky offshore)
 
     public Source source() {
         return this.source;
@@ -66,7 +67,9 @@ public final class EarthData {
             this.worldCover = new WorldCover(worldScale);
             this.osm = new OsmWater(osmSnapshot, worldScale);
             this.awsLevel = new AwsElevation(Math.min(12, AwsElevation.zoomFor(worldScale)), 64);
+            this.awsSea = new AwsElevation(8, 16);
         } else {
+            this.awsSea = null;
             this.osm = null;
             this.awsLevel = null;
             this.aws = null;
@@ -145,6 +148,11 @@ public final class EarthData {
     /** Inland water at a point: fraction of water around it (0..1), the lake's flat level (m) and distance to shore (cover pixels). */
     public record Water(double fraction, double level, double shoreDistance, double marineFraction) {
         public static final Water NONE = new Water(0, 0, 0, 0);
+    }
+
+    /** OPEN: smooth sea-floor elevation (m) */
+    public double seaFloor(double lat, double lon) {
+        return this.awsSea.elevation(lat, lon);
     }
 
     /** OPEN: OSM water class at a point */

@@ -110,6 +110,9 @@ public final class TerrainModel {
         if (cls == dev.esiliw.aquarium.data.OsmWater.OCEAN) {
             // real bathymetry, but never shallower than a gentle shelf away from the OSM coastline
             double minDepth = w.known() ? Math.min(1.5 + w.dist() * 0.03, 60.0) : 2.0;
+            // near the coast the fine data has the real detail; further out blend to the smooth coarse sea floor
+            double far = Math.min(1.0, Math.max(0.0, (w.dist() - 300.0) / 1200.0));
+            if (far > 0) e = e * (1 - far) + this.data.seaFloor(lat, lon) * far;
             minDepth *= 1.0 + 0.15 * dev.esiliw.aquarium.data.Noise.smooth(x / 37.0, z / 37.0, 21);
             e = Math.min(e, -minDepth);
             return new Column(Math.min(this.surfaceY(e), sea - 2), sea - 1, e, Cover.WATER, true, false, lat);

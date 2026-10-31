@@ -96,14 +96,8 @@ public final class OsmWater {
             if (t == MISSING) return null;
             if (t != null) return t;
         }
-        byte[] bytes = this.fetch(tx, ty);
-        Tile t;
-        try {
-            t = bytes == null ? null : this.rasterise(MvtReader.read(bytes), tx, ty);
-        } catch (IOException e) {
-            DataEnv.LOGGER.error("Bad OSM tile {}/{}/{}: {}", this.Z, tx, ty, e.toString());
-            t = null;
-        }
+        byte[] center = this.classes(tx, ty);
+        Tile t = center == null ? null : this.withDistance(tx, ty, center);
         synchronized (this.lru) {
             this.lru.put(key, t == null ? MISSING : t);
         }
@@ -118,7 +112,85 @@ public final class OsmWater {
         return this.rawTiles.get(this.Z, tx, ty);
     }
 
-    private Tile rasterise(Map<String, MvtReader.Layer> layers, int tx, int ty) {
+    private static final byte[] NO_TILE = new byte[0];
+    private final java.util.LinkedHashMap<Long, byte[]> classCache = new java.util.LinkedHashMap<>(64, 0.75f, true) {
+        @Override
+        protected boolean removeEldestEntry(Map.Entry<Long, byte[]> e) {
+            return this.size() > 96;
+        }
+    };
+
+    /** the water classes of one tile, or null if OSM has no such tile */
+    private byte[] classes(int tx, int ty) {
+        int n = 1 << this.Z;
+        tx = Math.floorMod(tx, n);
+        if (ty < 0 || ty >= n) return null;
+        long key = ((long) tx << 32) | (ty & 0xFFFFFFFFL);
+        synchronized (this.classCache) {
+            byte[] c = this.classCache.get(key);
+            if (c != null) return c == NO_TILE ? null : c;
+        }
+        byte[] bytes = this.fetch(tx, ty);
+        byte[] c = null;
+        try {
+            if (bytes != null) c = this.rasterise(MvtReader.read(bytes), tx, ty);
+        } catch (IOException e) {
+            DataEnv.LOGGER.error("Bad OSM tile {}/{}/{}: {}", this.Z, tx, ty, e.toString());
+        }
+        synchronized (this.classCache) {
+            this.classCache.put(key, c == null ? NO_TILE : c);
+        }
+        return c;
+    }
+
+    /** distance to shore measured across the tile and its 8 neighbours, so it doesn't jump at tile edges */
+    private Tile withDistance(int tx, int ty, byte[] center) {
+        int W = RES * 3;
+        float[] d = new float[W * W];
+        final float INF = 1e9f, D = 1.4142f;
+        for (int j = -1; j <= 1; j++) {
+            for (int i = -1; i <= 1; i++) {
+                byte[] c = (i == 0 && j == 0) ? center : this.classes(tx + i, ty + j);
+                for (int y = 0; y < RES; y++) {
+                    int row = (y + (j + 1) * RES) * W + (i + 1) * RES;
+                    for (int x = 0; x < RES; x++) {
+                        boolean wet = c == null ? center[Math.min(RES - 1, Math.max(0, x)) + y * RES] != LAND : c[x + y * RES] != LAND;
+                        d[row + x] = wet ? INF : 0;
+                    }
+                }
+            }
+        }
+        for (int y = 0; y < W; y++) for (int x = 0; x < W; x++) {
+            int i = x + y * W;
+            if (d[i] == 0) continue;
+            float v = d[i];
+            if (x > 0) v = Math.min(v, d[i - 1] + 1);
+            if (y > 0) v = Math.min(v, d[i - W] + 1);
+            if (x > 0 && y > 0) v = Math.min(v, d[i - W - 1] + D);
+            if (x < W - 1 && y > 0) v = Math.min(v, d[i - W + 1] + D);
+            d[i] = v;
+        }
+        for (int y = W - 1; y >= 0; y--) for (int x = W - 1; x >= 0; x--) {
+            int i = x + y * W;
+            if (d[i] == 0) continue;
+            float v = d[i];
+            if (x < W - 1) v = Math.min(v, d[i + 1] + 1);
+            if (y < W - 1) v = Math.min(v, d[i + W] + 1);
+            if (x < W - 1 && y < W - 1) v = Math.min(v, d[i + W + 1] + D);
+            if (x > 0 && y < W - 1) v = Math.min(v, d[i + W - 1] + D);
+            d[i] = v;
+        }
+        double latC = Math.toDegrees(Math.atan(Math.sinh(Math.PI * (1 - 2 * (ty + 0.5) / (1 << this.Z)))));
+        double pxMeters = GeoProjection.EQUATOR_CIRCUMFERENCE * Math.cos(Math.toRadians(latC)) / (1 << this.Z) / RES;
+        short[] dist = new short[RES * RES];
+        for (int y = 0; y < RES; y++) for (int x = 0; x < RES; x++) {
+            float v = d[(x + RES) + (y + RES) * W];
+            dist[x + y * RES] = (short) Math.min(30000, v >= INF ? 30000 : Math.round(v * pxMeters));
+        }
+        return new Tile(center, dist);
+    }
+
+    private byte[] rasterise(Map<String, MvtReader.Layer> layers, int tx, int ty) {
         byte[] cls = new byte[RES * RES];
         int Z = this.Z;
         double latC = Math.toDegrees(Math.atan(Math.sinh(Math.PI * (1 - 2 * (ty + 0.5) / (1 << Z)))));
@@ -168,33 +240,7 @@ public final class OsmWater {
                 for (int[] line : f.rings()) drawLine(cls, line, k, w / 2.0, v);
             }
         }
-        // distance to the nearest non-water pixel (chamfer), in metres
-        float[] d = new float[RES * RES];
-        final float INF = 1e9f, D = 1.4142f;
-        for (int i = 0; i < d.length; i++) d[i] = cls[i] != LAND ? INF : 0;
-        for (int y = 0; y < RES; y++) for (int x = 0; x < RES; x++) {
-            int i = x + y * RES;
-            if (d[i] == 0) continue;
-            float v = d[i];
-            if (x > 0) v = Math.min(v, d[i - 1] + 1);
-            if (y > 0) v = Math.min(v, d[i - RES] + 1);
-            if (x > 0 && y > 0) v = Math.min(v, d[i - RES - 1] + D);
-            if (x < RES - 1 && y > 0) v = Math.min(v, d[i - RES + 1] + D);
-            d[i] = v;
-        }
-        for (int y = RES - 1; y >= 0; y--) for (int x = RES - 1; x >= 0; x--) {
-            int i = x + y * RES;
-            if (d[i] == 0) continue;
-            float v = d[i];
-            if (x < RES - 1) v = Math.min(v, d[i + 1] + 1);
-            if (y < RES - 1) v = Math.min(v, d[i + RES] + 1);
-            if (x < RES - 1 && y < RES - 1) v = Math.min(v, d[i + RES + 1] + D);
-            if (x > 0 && y < RES - 1) v = Math.min(v, d[i + RES - 1] + D);
-            d[i] = v;
-        }
-        short[] dist = new short[RES * RES];
-        for (int i = 0; i < d.length; i++) dist[i] = (short) Math.min(30000, d[i] >= INF ? 30000 : Math.round(d[i] * pxMeters));
-        return new Tile(cls, dist);
+        return cls;
     }
 
     /** even-odd scanline fill of all rings of one feature */
