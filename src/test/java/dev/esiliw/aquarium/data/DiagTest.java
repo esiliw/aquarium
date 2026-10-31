@@ -36,7 +36,7 @@ public class DiagTest {
         d("zooms: elevation %d, cover %d, cover px %.1f m", data.elevationZoom(), data.coverZoom(), data.coverPixelMeters());
         String[][] places = {{"Helgoland", "54.1825", "7.8856"}, {"Helgoland sea", "54.15", "7.95"},
                 {"Hufeisensee", "51.4840", "12.0300"}, {"Hufeisensee shore", "51.4800", "12.0150"},
-                {"Geiseltalsee", "51.2900", "11.8800"}, {"Geiseltalsee 2", "51.3050", "11.9300"}, {"Geiseltal rim", "51.3300", "11.9000"},
+                {"Geiseltalsee", "51.2900", "11.8800"}, {"Geiseltalsee 2", "51.3050", "11.9300"}, {"user lake 1:10", "51.2830", "11.9140"}, {"Hufeisensee 2", "51.4975", "12.0420"}, {"Geiseltal rim", "51.3300", "11.9000"},
                 {"Halle city", "51.4820", "11.9700"}, {"Lake Constance", "47.6000", "9.4000"}, {"Mueritz", "53.4300", "12.6800"}};
         for (String[] p : places) {
             double lat = Double.parseDouble(p[1]), lon = Double.parseDouble(p[2]);

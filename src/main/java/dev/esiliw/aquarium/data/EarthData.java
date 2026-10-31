@@ -140,8 +140,12 @@ public final class EarthData {
         int zoom = this.cover.zoom();
         int w = (int) Math.round(GeoTileSource.globalWidth(zoom));
         int h = (int) Math.round(GeoTileSource.globalHeight(zoom));
-        int px = Math.floorMod((int) Math.floor(GeoProjection.pixelX(lon, zoom)), w);
-        int py = Math.max(0, Math.min(h - 1, (int) Math.floor(GeoProjection.pixelY(lat, zoom))));
+        double fx = GeoProjection.pixelX(lon, zoom), fy = GeoProjection.pixelY(lat, zoom);
+        // roughen the borders between land-cover pixels so areas aren't perfect squares
+        fx += 0.45 * Noise.smooth(fx * 1.7, fy * 1.7, 11) + 0.2 * Noise.smooth(fx * 5.1, fy * 5.1, 12);
+        fy += 0.45 * Noise.smooth(fx * 1.7, fy * 1.7, 13) + 0.2 * Noise.smooth(fx * 5.1, fy * 5.1, 14);
+        int px = Math.floorMod((int) Math.floor(fx), w);
+        int py = Math.max(0, Math.min(h - 1, (int) Math.floor(fy)));
         TerrariumRasterReader.Raster t = this.cover.getTile(px / GeoTileSource.TILE_SIZE, py / GeoTileSource.TILE_SIZE);
         if (t == null) return Cover.NO;
         return Cover.byId(t.get(px % GeoTileSource.TILE_SIZE, py % GeoTileSource.TILE_SIZE));

@@ -42,6 +42,7 @@ public final class LakeTile {
             comp[start] = nComp;
             double ringMin = Double.MAX_VALUE;
             java.util.HashSet<Integer> ringSeen = new java.util.HashSet<>();
+            java.util.ArrayList<Double> ring = new java.util.ArrayList<>();
             while (head < tail) {
                 int i = queue[head++];
                 int x = i % w, y = i / w;
@@ -55,13 +56,20 @@ public final class LakeTile {
                             queue[tail++] = j;
                         }
                     } else if (ringSeen.add(j)) {
-                        ringMin = Math.min(ringMin, elevation.get(nx, ny));
+                        double ev = elevation.get(nx, ny);
+                        ring.add(ev);
+                        ringMin = Math.min(ringMin, ev);
                     }
                 }
             }
             // whole tile is water / no shore found: use the water pixels themselves
             if (ringMin == Double.MAX_VALUE) {
                 for (int q = 0; q < tail; q++) ringMin = Math.min(ringMin, elevation.get(queue[q] % w, queue[q] / w));
+            }
+            // a low percentile of the shoreline, not the single lowest point (outlets / pits would drag the whole lake down)
+            if (!ring.isEmpty()) {
+                java.util.Collections.sort(ring);
+                ringMin = ring.get(Math.min(ring.size() - 1, (int) (ring.size() * 0.2)));
             }
             short lv = (short) Math.max(Short.MIN_VALUE + 1, Math.min(Short.MAX_VALUE, Math.floor(ringMin)));
             for (int q = 0; q < tail; q++) level[queue[q]] = lv;

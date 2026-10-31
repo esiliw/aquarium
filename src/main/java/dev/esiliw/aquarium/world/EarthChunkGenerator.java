@@ -143,7 +143,8 @@ public class EarthChunkGenerator extends ChunkGenerator {
         EarthData.Water w = this.data.water(lat, lon);
         if (w.fraction() > 0) {
             int lakeY = this.surfaceY(Math.max(w.level(), 0.5));
-            boolean isLake = w.fraction() >= 0.5 || (w.fraction() > 0.15 && e < w.level() + 0.5);
+            // the lake only fills ground that really lies below its water level -> shoreline follows the fine terrain
+            boolean isLake = (w.fraction() > 0.1 && e <= w.level() + 1.0) || (w.fraction() > 0.97 && e <= w.level() + 6.0);
             if (isLake) {
                 double shoreMeters = w.shoreDistance() * this.data.coverPixelMeters() * Math.cos(Math.toRadians(lat));
                 double depthMeters = Math.min(3.0 + shoreMeters * 0.02, 60.0);
