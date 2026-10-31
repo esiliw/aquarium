@@ -75,8 +75,8 @@ public final class EarthData {
     }
 
     /** Inland water at a point: fraction of water around it (0..1), the lake's flat level (m) and distance to shore (cover pixels). */
-    public record Water(double fraction, double level, double shoreDistance) {
-        public static final Water NONE = new Water(0, 0, 0);
+    public record Water(double fraction, double level, double shoreDistance, double marineFraction) {
+        public static final Water NONE = new Water(0, 0, 0, 0);
     }
 
     public Water water(double lat, double lon) {
@@ -86,7 +86,7 @@ public final class EarthData {
         double fx = GeoProjection.pixelX(lon, zoom) - 0.5, fy = GeoProjection.pixelY(lat, zoom) - 0.5;
         int x0 = (int) Math.floor(fx), y0 = (int) Math.floor(fy);
         double tx = fx - x0, ty = fy - y0;
-        double frac = 0, wsum = 0, level = Double.NaN, dist = 0, best = -1;
+        double frac = 0, wsum = 0, level = Double.NaN, dist = 0, best = -1, marine = 0;
         for (int j = 0; j <= 1; j++) {
             for (int i = 0; i <= 1; i++) {
                 int px = Math.floorMod(x0 + i, gw), py = Math.max(0, Math.min(gh - 1, y0 + j));
@@ -95,7 +95,9 @@ public final class EarthData {
                 wsum += wgt;
                 if (t == null) continue;
                 int k = (px % GeoTileSource.TILE_SIZE) + (py % GeoTileSource.TILE_SIZE) * t.size;
-                if (t.water[k]) {
+                if (t.water[k] && t.marine[k]) {
+                    marine += wgt;
+                } else if (t.water[k]) {
                     frac += wgt;
                     dist += wgt * t.dist[k];
                     if (wgt > best) {
@@ -105,8 +107,9 @@ public final class EarthData {
                 }
             }
         }
-        if (frac <= 0) return Water.NONE;
-        return new Water(frac / wsum, level, dist / frac);
+        if (frac <= 0 && marine <= 0) return Water.NONE;
+        if (frac <= 0) return new Water(0, 0, 0, marine / wsum);
+        return new Water(frac / wsum, level, dist / frac, marine / wsum);
     }
 
     private static int floorDiv(double v) {

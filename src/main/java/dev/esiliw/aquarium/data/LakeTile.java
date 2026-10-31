@@ -13,10 +13,12 @@ public final class LakeTile {
     final boolean[] water;
     final short[] level;     // metres, per pixel (same for the whole lake)
     final float[] dist;      // distance to shore in pixels
+    final boolean[] marine;  // land-cover water connected to the sea (lagoons, estuaries, misclassified coast)
 
-    LakeTile(int size, boolean[] water, short[] level, float[] dist) {
+    LakeTile(int size, boolean[] water, boolean[] marine, short[] level, float[] dist) {
         this.size = size;
         this.water = water;
+        this.marine = marine;
         this.level = level;
         this.dist = dist;
     }
@@ -33,6 +35,7 @@ public final class LakeTile {
     static LakeTile build(TerrariumRasterReader.Raster cover, int waterId, ElevationAtPixel elevation, OceanAtPixel ocean) {
         int w = cover.width, h = cover.height;
         boolean[] water = new boolean[w * h];
+        boolean[] marine = new boolean[w * h];
         for (int i = 0; i < water.length; i++) water[i] = cover.values[i] == waterId;
         short[] level = new short[w * h];
         java.util.Arrays.fill(level, NO_LEVEL);
@@ -86,7 +89,7 @@ public final class LakeTile {
                     if (Boolean.TRUE.equals(o)) sea++;
                 }
                 if (sea > 0 && sea >= samples * 0.15) {
-                    for (int q = 0; q < tail; q++) water[queue[q]] = false;
+                    for (int q = 0; q < tail; q++) marine[queue[q]] = true;
                     continue;
                 }
             }
@@ -118,6 +121,6 @@ public final class LakeTile {
             dist[i] = v;
         }
         for (int i = 0; i < dist.length; i++) if (dist[i] >= INF) dist[i] = 50;
-        return new LakeTile(w, water, level, dist);
+        return new LakeTile(w, water, marine, level, dist);
     }
 }
