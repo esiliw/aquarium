@@ -12,7 +12,17 @@ jobs:
           distribution: 'temurin'
       - run: chmod +x ./gradlew
       - name: build
-        run: ./gradlew build --stacktrace
+        run: |
+          set -o pipefail
+          ./gradlew build --stacktrace 2>&1 | tee build.log
+      - name: report errors
+        if: failure()
+        run: |
+          # turn compiler / gradle errors into annotations so they can be read through the API
+          grep -E "error:|warning: \[|What went wrong|Could not|Caused by|> " build.log | head -60 | while IFS= read -r line; do
+            echo "::error::${line//%/%25}"
+          done
+          tail -40 build.log | while IFS= read -r line; do echo "::error title=tail::${line//%/%25}"; done
       - uses: actions/upload-artifact@v4
         with:
           name: aquarium-jar
