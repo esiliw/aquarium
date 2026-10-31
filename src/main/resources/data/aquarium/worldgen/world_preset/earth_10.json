@@ -12,7 +12,9 @@
           "height": 2544,
           "spawn_lat": 37.9122,
           "spawn_lon": 139.0613,
-          "projection": "mercator"
+          "projection": "mercator",
+          "data_source": "open",
+          "osm_snapshot": "20261025_080012_pt"
         }
       }
     },
