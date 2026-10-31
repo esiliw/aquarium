@@ -12,7 +12,7 @@ import java.util.Map;
  * pinned to one dated snapshot per world. Each tile is rasterised once into a water class grid plus a distance-to-shore grid.
  */
 public final class OsmWater {
-    public static final int Z = 14, RES = 512;
+    public static final int MAX_Z = 14, RES = 512;
     public static final byte LAND = 0, OCEAN = 1, LAKE = 2, RIVER = 3, STREAM = 4;
     public static final String DEFAULT_SNAPSHOT = "20261025_080012_pt";
 
@@ -23,9 +23,14 @@ public final class OsmWater {
     private final String pinned;
     private volatile String snapshot;
 
+    private final int Z;
+
     public OsmWater(String snapshot, double blockMetersAtEquator) {
         this.pinned = snapshot;
         this.blockMetersAtEquator = blockMetersAtEquator;
+        // vector-tile zoom whose 512 px raster has about one pixel per block (detail beyond that is wasted downloads)
+        double z = Math.log(GeoProjection.EQUATOR_CIRCUMFERENCE / (RES * blockMetersAtEquator)) / Math.log(2);
+        this.Z = Math.max(6, Math.min(MAX_Z, (int) Math.ceil(z - 1e-6)));
     }
 
     /** the pinned snapshot if the server still has it, otherwise the newest one (resolved once) */
@@ -62,6 +67,7 @@ public final class OsmWater {
     }
 
     public Sample sample(double lat, double lon) {
+        int Z = this.Z;
         double fx = AwsElevation.pixelX(lon, Z) / AwsElevation.SIZE, fy = AwsElevation.pixelY(lat, Z) / AwsElevation.SIZE;
         int n = 1 << Z;
         int tx = Math.floorMod((int) Math.floor(fx), n), ty = Math.max(0, Math.min(n - 1, (int) Math.floor(fy)));
@@ -95,7 +101,7 @@ public final class OsmWater {
         try {
             t = bytes == null ? null : this.rasterise(MvtReader.read(bytes), tx, ty);
         } catch (IOException e) {
-            DataEnv.LOGGER.error("Bad OSM tile {}/{}/{}: {}", Z, tx, ty, e.toString());
+            DataEnv.LOGGER.error("Bad OSM tile {}/{}/{}: {}", this.Z, tx, ty, e.toString());
             t = null;
         }
         synchronized (this.lru) {
@@ -109,11 +115,12 @@ public final class OsmWater {
             "https://tiles.openfreemap.org/planet/" + this.snapshot() + "/" + z + "/" + x + "/" + y + ".pbf", b -> b, 16);
 
     private byte[] fetch(int tx, int ty) {
-        return this.rawTiles.get(Z, tx, ty);
+        return this.rawTiles.get(this.Z, tx, ty);
     }
 
     private Tile rasterise(Map<String, MvtReader.Layer> layers, int tx, int ty) {
         byte[] cls = new byte[RES * RES];
+        int Z = this.Z;
         double latC = Math.toDegrees(Math.atan(Math.sinh(Math.PI * (1 - 2 * (ty + 0.5) / (1 << Z)))));
         double tileMeters = GeoProjection.EQUATOR_CIRCUMFERENCE * Math.cos(Math.toRadians(latC)) / (1 << Z);
         double pxMeters = tileMeters / RES;
