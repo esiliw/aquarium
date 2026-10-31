@@ -24,7 +24,15 @@ jobs:
         run: |
           AQUARIUM_DIAG=1 ./gradlew test --rerun-tasks 2>&1 | tee diag.log || true
           grep "DIAG " diag.log | sed 's/^.*DIAG /DIAG /' | while IFS= read -r line; do echo "::notice::${line//%/%25}"; done
-          grep -E "FAILED|Exception|error:" diag.log | head -20 | while IFS= read -r line; do echo "::warning::${line//%/%25}"; done
+          grep -E "FAILED|Exception|error:|WARN" diag.log | head -40 >> diag-summary.txt || true
+          grep "DIAG " diag.log | sed 's/^.*DIAG /DIAG /' >> diag-summary.txt || true
+          # publish the full diagnostics on the 'diag' branch so they can be read without the log viewer
+          git config user.name "aquarium-ci"; git config user.email "ci@users.noreply.github.com"
+          git checkout --orphan diag-out
+          git rm -rfq --cached . >/dev/null
+          git add -f diag-summary.txt
+          git commit -qm "diagnostics for ${GITHUB_SHA::7}"
+          git push -qf origin diag-out:diag
       - name: report errors
         if: failure()
         run: |

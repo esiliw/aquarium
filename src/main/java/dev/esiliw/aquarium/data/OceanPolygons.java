@@ -103,9 +103,13 @@ public final class OceanPolygons {
             DataInputStream in = new DataInputStream(new SingleXZInputStream(new BufferedInputStream(new ByteArrayInputStream(bytes))));
             int count = in.readInt();
             if (count == 0) return EMPTY;
-            List<Geometry> parts = new ArrayList<>(count);
-            for (int i = 0; i < count; i++) parts.add(readMultiPolygon(in));
-            Geometry all = GF.buildGeometry(parts);
+            List<Polygon> parts = new ArrayList<>();
+            for (int i = 0; i < count; i++) {
+                MultiPolygon mp = readMultiPolygon(in);
+                for (int k = 0; k < mp.getNumGeometries(); k++) parts.add((Polygon) mp.getGeometryN(k));
+            }
+            if (parts.isEmpty()) return EMPTY;
+            Geometry all = GF.createMultiPolygon(parts.toArray(new Polygon[0]));
             return new Cell(new IndexedPointInAreaLocator(all), false);
         } catch (Exception e) {
             DataEnv.LOGGER.warn("Bad ocean cell {}/{}: {}", cx, cy, e.toString());
