@@ -2,11 +2,13 @@
 
 A Fabric **1.20.1** port of [Terrarium](https://github.com/gegy1000/Terrarium) by gegy: a world type that generates a replica of the Earth from real elevation, land-cover and map data, downloaded as you explore and cached locally.
 
-## Status (0.4.0)
-- World presets (Create World → More → World Type): **Earth 1:40**, **1:10**, **1:4**, **1:1**
-  - scales are given at the equator; new worlds use a Mercator projection (true shapes everywhere, so places further from the equator come out larger: 1:4 is about 1:3.2 at Niigata and 1:2.5 in Germany). F3 and `/geotool` show the scale where you stand. Nothing beyond 85° N/S.
-  - 1:40 uses the normal overworld height; the others use a tall dimension (y -512 to 2031)
-  - vertical scale: 40 m/block (1:40), 10 (1:10), 5 (1:4 and 1:1, so Everest still fits)
+## Status (0.5.0)
+- World type (Create World → More → World Type): **Earth (Aquarium)**, then **Customize** to set
+  - scale 1:N (default 1:10) and metres per block for height (default auto: like the scale, but at least 5 so Everest fits)
+  - where the world starts: a place name or `lat, lon`, looked up like `/geotp` (empty = Malmö)
+  - projection (true shapes / original Terrarium) and data source (open data / Terrarium server)
+- Mercator scales are given at the equator: further from it everything comes out larger (1:10 is about 1:5.7 in Malmö). F3 and `/geotool` show the scale where you stand. Nothing beyond 85° N/S.
+- Tall world: y -512 to 2031
 - **Open data sources** (new worlds): elevation and sea depth from the AWS terrain tiles, 10 m land cover from ESA WorldCover, sea / lakes / rivers / streams from OpenStreetMap (OpenFreeMap vector tiles, pinned to one dated snapshot per world so later OSM edits never cause seams)
 - Worlds made with versions before 0.4 keep generating from the Terrarium server exactly as before (`"data_source": "terrarium"`, equirectangular projection)
 - Failed downloads are retried until they succeed instead of being treated as "no data", so a server hiccup can't bake holes into the world. Everything downloaded is kept in `.minecraft/aquarium-cache`.
