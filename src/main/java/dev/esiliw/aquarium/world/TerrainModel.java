@@ -67,7 +67,7 @@ public final class TerrainModel {
         Cover cover = this.data.cover(lat, lon);
         if (cover == Cover.WATER) cover = Cover.NO;
         // a little dither before rounding to blocks, so flat land doesn't show the data pixels as square 1-block terraces
-        int top = this.surfaceY(e + 0.35 * this.settings.verticalScale() * dev.esiliw.aquarium.data.Noise.smooth(x / 9.0, z / 9.0, 31));
+        int top = this.surfaceY(Math.max(0.5, e + 0.35 * this.settings.verticalScale() * dev.esiliw.aquarium.data.Noise.smooth(x / 9.0, z / 9.0, 31)));
 
         EarthData.Water w = this.data.water(lat, lon);
         if (w.fraction() > 0) {
