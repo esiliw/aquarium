@@ -123,9 +123,10 @@ public final class GeoCommands {
                 false);
         CompletableFuture.supplyAsync(() -> {
                     dev.esiliw.aquarium.world.TerrainModel.Column c = g.column((int) Math.floor(x), (int) Math.floor(z));
-                    return String.format(Locale.ROOT, "Elevation %.0f m, land cover: %s%s, world scale 1:%s", c.elevation(),
+                    return String.format(Locale.ROOT, "Elevation %.0f m, land cover: %s%s, scale here 1:%s (%s)", c.elevation(),
                             c.cover().name().toLowerCase(Locale.ROOT), c.ocean() ? " (ocean)" : c.lake() ? " (lake)" : "",
-                            EarthChunkGenerator.trim(g.settings.worldScale()));
+                            EarthChunkGenerator.trim(Math.round(g.projection().metersPerBlock(lat) * 100) / 100.0),
+                            g.projection().type().name().toLowerCase(Locale.ROOT));
                 }, Aquarium.IO_EXECUTOR)
                 .thenAccept(msg -> src.getServer().execute(() -> src.sendSuccess(() -> Component.literal(msg).withStyle(ChatFormatting.GRAY), false)));
         return 1;

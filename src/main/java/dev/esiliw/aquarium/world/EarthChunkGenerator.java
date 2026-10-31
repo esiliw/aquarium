@@ -258,7 +258,7 @@ public class EarthChunkGenerator extends ChunkGenerator {
     @Override
     public void addDebugScreenInfo(List<String> info, RandomState random, BlockPos pos) {
         double lat = this.projection.lat(pos.getZ() + 0.5), lon = this.projection.lon(pos.getX() + 0.5);
-        info.add(String.format(Locale.ROOT, "Aquarium: %.5f, %.5f  scale 1:%s", lat, lon, trim(this.settings.worldScale())));
+        info.add(String.format(Locale.ROOT, "Aquarium: %.5f, %.5f  scale 1:%s here", lat, lon, trim(Math.round(this.projection.metersPerBlock(lat) * 100) / 100.0)));
         TerrainModel.Column c = this.column(pos.getX(), pos.getZ());
         info.add("Cover: " + c.cover().name().toLowerCase(Locale.ROOT)
                 + String.format(Locale.ROOT, "  elevation %.0f m", c.elevation()) + (c.ocean() ? "  ocean" : c.lake() ? "  lake" : ""));

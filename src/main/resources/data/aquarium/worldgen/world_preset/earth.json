@@ -11,7 +11,8 @@
           "min_y": -64,
           "height": 384,
           "spawn_lat": 37.9122,
-          "spawn_lon": 139.0613
+          "spawn_lon": 139.0613,
+          "projection": "mercator"
         }
       }
     },
