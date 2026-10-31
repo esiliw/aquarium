@@ -33,7 +33,20 @@ public class RenderDiagTest {
                 new Place("hawaii_big_island", 40, 40, 18.9, -156.1, 20.3, -154.8, 2), // volcano, steep coast
                 new Place("rio_de_janeiro", 4, 5, -23.00, -43.30, -22.85, -43.10, 4),  // bay, steep hills, southern hemisphere
         };
-        for (Place p : places) renderPlace(p, out);
+        Throwable first = null;
+        for (Place p : places) {
+            try {
+                renderPlace(p, out);
+            } catch (Throwable t) {
+                if (first == null) first = t;
+                for (Throwable c = t; c != null; c = c.getCause()) {
+                    System.out.println("DIAG ERROR " + p.name + ": " + c);
+                    StackTraceElement[] st = c.getStackTrace();
+                    for (int k = 0; k < Math.min(12, st.length); k++) System.out.println("DIAG   at " + st[k]);
+                }
+            }
+        }
+        if (first != null) throw new AssertionError(first);
     }
 
     static void renderPlace(Place p, File out) throws Exception {
