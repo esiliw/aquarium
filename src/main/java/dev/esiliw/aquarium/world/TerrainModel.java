@@ -53,12 +53,15 @@ public final class TerrainModel {
         if (ocean) {
             // the elevation data is coarse and often reads ~0 m right off the coast: make the sea floor drop away
             // from the real coastline, and use the bathymetry wherever it is deeper than that
-            double minDepth = 2.0;
+            double minDepth = 2.0, maxDepth = Double.MAX_VALUE;
             if (outline != null) {
-                double coast = this.data.coastDistance(lat, lon, 2500.0);
+                double coast = this.data.coastDistance(lat, lon, 30000.0);
                 minDepth = Math.min(2.0 + coast * 0.03, 70.0);
                 minDepth *= 1.0 + 0.15 * dev.esiliw.aquarium.data.Noise.smooth(x / 37.0, z / 37.0, 21);
+                maxDepth = 2.0 + coast * 0.03 + 3.0 * (coast / 1000.0) * (coast / 1000.0);   // shelf first, deep sea further out
             }
+            double filled = this.data.bathymetry(lat, lon);
+            if (!Double.isNaN(filled)) e = Math.min(e, Math.max(filled, -maxDepth));
             e = Math.min(e, -minDepth);
             int top = this.surfaceY(e);
             return new Column(top, sea - 1, e, Cover.WATER, true, false, lat);

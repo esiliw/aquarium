@@ -51,5 +51,9 @@ public class DiagTest {
         sb = new StringBuilder();
         for (double lon = 11.80; lon <= 12.00; lon += 0.01) sb.append(String.format(Locale.ROOT, "%.0f ", data.elevation(51.2950, lon)));
         d("profile Geiseltalsee W-E: %s", sb);
+        EarthData d40 = EarthData.forScale(40);
+        sb = new StringBuilder();
+        for (double lon = -157.2; lon <= -155.9; lon += 0.05) sb.append(String.format(Locale.ROOT, "%.0f/%.0f ", d40.elevation(19.6, lon), d40.bathymetry(19.6, lon)));
+        d("profile off Hawaii W-E (fine/filled): %s", sb);
     }
 }

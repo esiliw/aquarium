@@ -25,6 +25,8 @@ public final class EarthData {
     private final GeoTileSource cover;
     private final GeoTileSource coarseElevation;      // elevation on the land-cover grid, for lake levels
     private final OceanPolygons ocean = new OceanPolygons();
+    private static final BathymetryField BATHYMETRY = new BathymetryField();
+    private final java.util.Map<Long, Boolean> emptyCellIsSea = new java.util.concurrent.ConcurrentHashMap<>();
     private final java.util.Map<Long, LakeTile> lakes = new java.util.LinkedHashMap<>(32, 0.75f, true) {
         @Override
         protected boolean removeEldestEntry(java.util.Map.Entry<Long, LakeTile> e) {
@@ -42,7 +44,29 @@ public final class EarthData {
 
     /** TRUE/FALSE from the ocean outlines, or null where there are none (use elevation instead). */
     public Boolean oceanAt(double lat, double lon) {
-        return this.ocean.oceanAt(lat, lon);
+        Boolean o = this.ocean.oceanAt(lat, lon);
+        if (o != null) return o;
+        // a 1x1 degree cell without any coastline is either all sea or all land: decide once for the whole cell,
+        // so low-lying land (deserts, polders, depressions) isn't flooded speck by speck
+        int cx = (int) Math.floor(lon), cy = (int) Math.floor(lat);
+        long key = ((long) cx << 32) | (cy & 0xFFFFFFFFL);
+        return this.emptyCellIsSea.computeIfAbsent(key, k -> {
+            int sea = 0, n = 0;
+            for (int j = 0; j < 7; j++) {
+                for (int i = 0; i < 7; i++) {
+                    double v = BATHYMETRY.rawAt(cy + (j + 0.5) / 7.0, cx + (i + 0.5) / 7.0);
+                    if (Double.isNaN(v)) continue;
+                    n++;
+                    if (v < -1) sea++;
+                }
+            }
+            return n > 0 && sea * 2 > n;
+        });
+    }
+
+    /** smooth sea-floor depth (metres, negative) filled in where the elevation data has no bathymetry, NaN if unknown */
+    public double bathymetry(double lat, double lon) {
+        return BATHYMETRY.depthAt(lat, lon);
     }
 
     /** metres to the nearest coastline from the outlines (capped) */

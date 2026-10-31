@@ -156,20 +156,30 @@ public final class OceanPolygons {
 
     /** the polygon boundaries minus the parts that only run along the 1x1 degree clipping box */
     private static IndexedFacetDistance coastLines(List<Polygon> parts, int cx, int cy, double xScale) {
+        // the clipping box is wherever the polygons reach their outermost extent (it may have a small margin around the cell)
+        double[] box = {Double.MAX_VALUE, Double.MAX_VALUE, -Double.MAX_VALUE, -Double.MAX_VALUE};
+        for (Polygon poly : parts) {
+            for (Coordinate c : poly.getExteriorRing().getCoordinates()) {
+                box[0] = Math.min(box[0], c.x);
+                box[1] = Math.min(box[1], c.y);
+                box[2] = Math.max(box[2], c.x);
+                box[3] = Math.max(box[3], c.y);
+            }
+        }
         List<LineString> lines = new ArrayList<>();
         for (Polygon poly : parts) {
-            addCoast(poly.getExteriorRing().getCoordinates(), cx, cy, xScale, lines);
-            for (int h = 0; h < poly.getNumInteriorRing(); h++) addCoast(poly.getInteriorRingN(h).getCoordinates(), cx, cy, xScale, lines);
+            addCoast(poly.getExteriorRing().getCoordinates(), box, xScale, lines);
+            for (int h = 0; h < poly.getNumInteriorRing(); h++) addCoast(poly.getInteriorRingN(h).getCoordinates(), box, xScale, lines);
         }
         if (lines.isEmpty()) return null;
         return new IndexedFacetDistance(GF.createMultiLineString(lines.toArray(new LineString[0])));
     }
 
-    private static void addCoast(Coordinate[] ring, int cx, int cy, double xScale, List<LineString> out) {
+    private static void addCoast(Coordinate[] ring, double[] box, double xScale, List<LineString> out) {
         List<Coordinate> run = new ArrayList<>();
         for (int i = 0; i + 1 < ring.length; i++) {
             Coordinate a = ring[i], b = ring[i + 1];
-            if (onBox(a, b, cx, cy)) {
+            if (onBox(a, b, box)) {
                 flush(run, out);
                 continue;
             }
@@ -184,10 +194,10 @@ public final class OceanPolygons {
         run.clear();
     }
 
-    private static boolean onBox(Coordinate a, Coordinate b, int cx, int cy) {
-        final double eps = 2e-5;
-        return (Math.abs(a.x - cx) < eps && Math.abs(b.x - cx) < eps) || (Math.abs(a.x - cx - 1) < eps && Math.abs(b.x - cx - 1) < eps)
-                || (Math.abs(a.y - cy) < eps && Math.abs(b.y - cy) < eps) || (Math.abs(a.y - cy - 1) < eps && Math.abs(b.y - cy - 1) < eps);
+    private static boolean onBox(Coordinate a, Coordinate b, double[] box) {
+        final double eps = 1e-6;
+        return (Math.abs(a.x - box[0]) < eps && Math.abs(b.x - box[0]) < eps) || (Math.abs(a.x - box[2]) < eps && Math.abs(b.x - box[2]) < eps)
+                || (Math.abs(a.y - box[1]) < eps && Math.abs(b.y - box[1]) < eps) || (Math.abs(a.y - box[3]) < eps && Math.abs(b.y - box[3]) < eps);
     }
 
     private static byte[] download(int cx, int cy) {
