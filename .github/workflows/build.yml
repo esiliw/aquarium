@@ -1,6 +1,9 @@
 name: build
 on: [push, pull_request, workflow_dispatch]
 
+permissions:
+  contents: write
+
 jobs:
   build:
     runs-on: ubuntu-24.04
@@ -27,3 +30,12 @@ jobs:
         with:
           name: aquarium-jar
           path: build/libs/*.jar
+      - name: publish "latest" download
+        if: github.event_name == 'push' && github.ref == 'refs/heads/main' && success()
+        env:
+          GH_TOKEN: ${{ github.token }}
+        run: |
+          JAR=$(ls build/libs/*.jar | grep -v sources | head -1)
+          gh release delete latest --yes --cleanup-tag 2>/dev/null || true
+          gh release create latest "$JAR" --prerelease --title "Latest build" \
+            --notes "Built automatically from $(git rev-parse --short HEAD). Put the .jar in your mods folder (Fabric 1.20.1 + Fabric API)."
