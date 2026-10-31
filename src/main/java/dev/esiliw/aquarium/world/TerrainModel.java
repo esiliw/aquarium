@@ -44,6 +44,7 @@ public final class TerrainModel {
     }
 
     public Column column(int x, int z) {
+        if (this.data.source() == EarthData.Source.OPEN) return this.columnOpen(x, z);
         double lat = this.projection.lat(z + 0.5), lon = this.projection.lon(x + 0.5);
         double e = this.data.elevation(lat, lon);
         int sea = this.settings.seaLevel();
@@ -94,6 +95,42 @@ public final class TerrainModel {
             }
             top = Math.max(top, lakeY);
         }
+        return new Column(top, Integer.MIN_VALUE, e, cover, false, false, lat);
+    }
+
+    /** open data: AWS elevation + bathymetry, OSM sea / lakes / rivers, WorldCover land cover */
+    private Column columnOpen(int x, int z) {
+        double lat = this.projection.lat(z + 0.5), lon = this.projection.lon(x + 0.5);
+        double e = this.data.elevation(lat, lon);
+        int sea = this.settings.seaLevel();
+        dev.esiliw.aquarium.data.OsmWater.Sample w = this.data.osm(lat, lon);
+        byte cls = w.known() ? w.cls() : (e < 0 ? dev.esiliw.aquarium.data.OsmWater.OCEAN : dev.esiliw.aquarium.data.OsmWater.LAND);
+        double vs = this.settings.verticalScale();
+
+        if (cls == dev.esiliw.aquarium.data.OsmWater.OCEAN) {
+            // real bathymetry, but never shallower than a gentle shelf away from the OSM coastline
+            double minDepth = w.known() ? Math.min(1.5 + w.dist() * 0.03, 60.0) : 2.0;
+            minDepth *= 1.0 + 0.15 * dev.esiliw.aquarium.data.Noise.smooth(x / 37.0, z / 37.0, 21);
+            e = Math.min(e, -minDepth);
+            return new Column(Math.min(this.surfaceY(e), sea - 2), sea - 1, e, Cover.WATER, true, false, lat);
+        }
+        if (cls != dev.esiliw.aquarium.data.OsmWater.LAND) {
+            // lakes and rivers: flat surface at the lowest nearby ground, bed deepening away from the bank
+            double level = this.data.waterLevel(lat, lon);
+            int waterTop = level < 0.5 ? sea - 1 : this.surfaceY(level) - 1;
+            double depthM = switch (cls) {
+                case dev.esiliw.aquarium.data.OsmWater.STREAM -> 1.0;
+                case dev.esiliw.aquarium.data.OsmWater.RIVER -> Math.min(1.5 + w.dist() * 0.08, 10.0);
+                default -> Math.min(2.0 + w.dist() * 0.06, 40.0);
+            };
+            int depth = Math.max(1, (int) Math.round(depthM / vs));
+            int top = Math.min(this.surfaceY(Math.max(e, 0.5)), waterTop - depth);
+            return new Column(top, waterTop, e, Cover.WATER, false, true, lat);
+        }
+        e = Math.max(e, 0.5);
+        Cover cover = this.data.cover(lat, lon);
+        if (cover == Cover.WATER) cover = Cover.NO;
+        int top = this.surfaceY(Math.max(0.5, e + 0.35 * vs * dev.esiliw.aquarium.data.Noise.smooth(x / 9.0, z / 9.0, 31)));
         return new Column(top, Integer.MIN_VALUE, e, cover, false, false, lat);
     }
 }

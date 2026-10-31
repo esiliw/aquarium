@@ -18,12 +18,13 @@ import dev.esiliw.aquarium.data.GeoProjection;
  * @param spawnLon      spawn longitude
  * @param projection    "mercator" (true shapes) or "equirectangular" (Terrarium's original; the default so worlds made
  *                      before this setting existed keep their layout)
+ * @param osmSnapshot   OpenFreeMap planet snapshot the world is pinned to (so OSM edits never change it later)
  * @param dataSource    "open" (AWS terrain tiles, ESA WorldCover, OpenStreetMap) or "terrarium" (gegy's server; the
  *                      default so older worlds keep generating the same way)
  */
 public record EarthSettings(double worldScale, double verticalScale, int heightOffset, int seaLevel, int minY, int height,
                             double spawnLat, double spawnLon, GeoProjection.Type projectionType,
-                            EarthData.Source dataSource) {
+                            EarthData.Source dataSource, String osmSnapshot) {
     private static final Codec<EarthData.Source> SOURCE_CODEC = Codec.STRING.comapFlatMap(s -> {
         try {
             return com.mojang.serialization.DataResult.success(EarthData.Source.valueOf(s.toUpperCase(java.util.Locale.ROOT)));
@@ -49,7 +50,8 @@ public record EarthSettings(double worldScale, double verticalScale, int heightO
             Codec.doubleRange(-90, 90).optionalFieldOf("spawn_lat", 37.9122).forGetter(EarthSettings::spawnLat),
             Codec.doubleRange(-180, 180).optionalFieldOf("spawn_lon", 139.0613).forGetter(EarthSettings::spawnLon),
             TYPE_CODEC.optionalFieldOf("projection", GeoProjection.Type.EQUIRECTANGULAR).forGetter(EarthSettings::projectionType),
-            SOURCE_CODEC.optionalFieldOf("data_source", EarthData.Source.TERRARIUM).forGetter(EarthSettings::dataSource)
+            SOURCE_CODEC.optionalFieldOf("data_source", EarthData.Source.TERRARIUM).forGetter(EarthSettings::dataSource),
+            Codec.STRING.optionalFieldOf("osm_snapshot", dev.esiliw.aquarium.data.OsmWater.DEFAULT_SNAPSHOT).forGetter(EarthSettings::osmSnapshot)
     ).apply(i, EarthSettings::new));
 
     public GeoProjection projection() {
@@ -58,7 +60,7 @@ public record EarthSettings(double worldScale, double verticalScale, int heightO
 
     public EarthData createData() {
         // Mercator blocks get smaller away from the equator: pick data detail for ~60 degrees latitude
-        if (this.dataSource == EarthData.Source.OPEN) return EarthData.get(this.worldScale, EarthData.Source.OPEN);
+        if (this.dataSource == EarthData.Source.OPEN) return EarthData.get(this.worldScale, EarthData.Source.OPEN, this.osmSnapshot);
         return EarthData.forScale(this.projectionType == GeoProjection.Type.MERCATOR ? this.worldScale * 0.5 : this.worldScale);
     }
 

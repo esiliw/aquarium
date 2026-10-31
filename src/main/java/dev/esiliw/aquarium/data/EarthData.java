@@ -27,13 +27,19 @@ public final class EarthData {
     }
 
     public static EarthData get(double worldScale, Source source) {
-        return SHARED.computeIfAbsent(worldScale + "/" + source, k -> new EarthData(worldScale, source));
+        return get(worldScale, source, OsmWater.DEFAULT_SNAPSHOT);
+    }
+
+    public static EarthData get(double worldScale, Source source, String osmSnapshot) {
+        return SHARED.computeIfAbsent(worldScale + "/" + source + "/" + osmSnapshot, k -> new EarthData(worldScale, source, osmSnapshot));
     }
 
     private final Source source;
     private final AwsElevation aws;          // OPEN: fine elevation + bathymetry
     private final AwsElevation awsCoarse;    // OPEN: coarse elevation for whole-cell decisions
     private final WorldCover worldCover;     // OPEN: 10 m land cover
+    private final OsmWater osm;              // OPEN: sea, lakes, rivers
+    private final AwsElevation awsLevel;     // OPEN: ~40 m elevation for water surface levels
 
     public Source source() {
         return this.source;
@@ -52,13 +58,17 @@ public final class EarthData {
         }
     };
 
-    private EarthData(double worldScale, Source source) {
+    private EarthData(double worldScale, Source source, String osmSnapshot) {
         this.source = source;
         if (source == Source.OPEN) {
             this.aws = new AwsElevation(AwsElevation.zoomFor(worldScale), 256);
             this.awsCoarse = new AwsElevation(6, 16);
             this.worldCover = new WorldCover(worldScale);
+            this.osm = new OsmWater(osmSnapshot, worldScale);
+            this.awsLevel = new AwsElevation(Math.min(12, AwsElevation.zoomFor(worldScale)), 64);
         } else {
+            this.osm = null;
+            this.awsLevel = null;
             this.aws = null;
             this.awsCoarse = null;
             this.worldCover = null;
@@ -72,6 +82,10 @@ public final class EarthData {
 
     /** TRUE/FALSE from the ocean outlines, or null where there are none (use elevation instead). */
     public Boolean oceanAt(double lat, double lon) {
+        if (this.osm != null) {
+            OsmWater.Sample w = this.osm.sample(lat, lon);
+            return w.known() ? w.cls() == OsmWater.OCEAN : this.awsCoarse.elevation(lat, lon) < 0;
+        }
         Boolean o = this.ocean.oceanAt(lat, lon);
         if (o != null) return o;
         // a 1x1 degree cell without any coastline is either all sea or all land: decide once for the whole cell,
@@ -133,7 +147,22 @@ public final class EarthData {
         public static final Water NONE = new Water(0, 0, 0, 0);
     }
 
+    /** OPEN: OSM water class at a point */
+    public OsmWater.Sample osm(double lat, double lon) {
+        return this.osm.sample(lat, lon);
+    }
+
+    /** OPEN: flat water surface (m) for a lake or river at this point: the lowest ground within ~1-2 coarse pixels */
+    public double waterLevel(double lat, double lon) {
+        return this.awsLevel.minAround(lat, lon, 1);
+    }
+
     public Water water(double lat, double lon) {
+        if (this.osm != null) {
+            OsmWater.Sample w = this.osm.sample(lat, lon);
+            boolean inland = w.known() && w.cls() != OsmWater.LAND && w.cls() != OsmWater.OCEAN;
+            return inland ? new Water(1, this.waterLevel(lat, lon), w.dist(), 0) : Water.NONE;
+        }
         int zoom = this.cover.zoom();
         int gw = (int) Math.round(GeoTileSource.globalWidth(zoom));
         int gh = (int) Math.round(GeoTileSource.globalHeight(zoom));

@@ -50,7 +50,7 @@ public class RenderDiagTest {
     }
 
     static void renderPlace(Place p, File out) throws Exception {
-        EarthSettings s = new EarthSettings(p.scale, p.vscale, 0, 63, -512, 2544, 0, 0, GeoProjection.Type.MERCATOR, EarthData.Source.OPEN);
+        EarthSettings s = new EarthSettings(p.scale, p.vscale, 0, 63, -512, 2544, 0, 0, GeoProjection.Type.MERCATOR, EarthData.Source.OPEN, OsmWater.DEFAULT_SNAPSHOT);
         GeoProjection proj = s.projection();
         TerrainModel model = new TerrainModel(s, proj, s.createData());
         EarthData data = model.data();

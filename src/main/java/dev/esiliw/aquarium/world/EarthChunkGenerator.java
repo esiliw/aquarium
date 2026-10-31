@@ -141,6 +141,13 @@ public class EarthChunkGenerator extends ChunkGenerator {
                 int i = (lx + 1) + (lz + 1) * 18;
                 TerrainModel.Column c = cols[i];
                 int top = c.top();
+                if (c.waterTop() == Integer.MIN_VALUE) {
+                    // banks hold the water in: never lower than a neighbouring lake or river surface
+                    for (int nb : new int[]{i - 1, i + 1, i - 18, i + 18}) {
+                        TerrainModel.Column n = cols[nb];
+                        if (n.lake() && n.waterTop() > top) top = n.waterTop();
+                    }
+                }
                 int slope = Math.max(Math.abs(cols[i - 1].top() - cols[i + 1].top()), Math.abs(cols[i - 18].top() - cols[i + 18].top()));
                 Cover cover = c.cover();
                 boolean cold = Math.abs(c.lat()) + Math.max(0, c.elevation()) / 150.0 > 66;

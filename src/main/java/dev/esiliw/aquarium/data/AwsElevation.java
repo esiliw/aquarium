@@ -66,6 +66,14 @@ public final class AwsElevation {
         return t[(px % SIZE) + (py % SIZE) * SIZE];
     }
 
+    /** lowest raw pixel within r pixels: the flat surface of a lake or river next to its banks */
+    public double minAround(double lat, double lon, int r) {
+        int cx = (int) Math.floor(pixelX(lon, this.zoom)), cy = (int) Math.floor(pixelY(lat, this.zoom));
+        double m = Double.MAX_VALUE;
+        for (int dy = -r; dy <= r; dy++) for (int dx = -r; dx <= r; dx++) m = Math.min(m, this.raw(cx + dx, cy + dy));
+        return m;
+    }
+
     /** metres, bicubic between pixels */
     public double elevation(double lat, double lon) {
         double fx = pixelX(lon, this.zoom) - 0.5, fy = pixelY(lat, this.zoom) - 0.5;
