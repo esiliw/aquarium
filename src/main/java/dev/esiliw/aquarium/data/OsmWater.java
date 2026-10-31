@@ -95,7 +95,7 @@ public final class OsmWater {
         }
     };
 
-    private static final Tile MISSING = new Tile(new byte[0], new short[0]);
+    private static final Tile MISSING = new Tile(new byte[0], new short[0], null);
 
     private Tile tile(int tx, int ty, double lat) {
         long key = ((long) tx << 32) | (ty & 0xFFFFFFFFL);
