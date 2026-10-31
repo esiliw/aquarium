@@ -55,5 +55,19 @@ public class DiagTest {
         sb = new StringBuilder();
         for (double lon = -157.2; lon <= -155.9; lon += 0.05) sb.append(String.format(Locale.ROOT, "%.0f/%.0f ", d40.elevation(19.6, lon), d40.bathymetry(19.6, lon)));
         d("profile off Hawaii W-E (fine/filled): %s", sb);
+        for (int z : new int[]{10, 13, 15}) {
+            AwsElevation aws = new AwsElevation(z, 64);
+            sb = new StringBuilder();
+            for (double lon = -157.2; lon <= -155.9; lon += 0.05) sb.append(String.format(Locale.ROOT, "%.0f ", aws.elevation(19.6, lon)));
+            d("AWS z%d off Hawaii W-E: %s", z, sb);
+            sb = new StringBuilder();
+            for (double lon = 7.80; lon <= 7.98; lon += 0.01) sb.append(String.format(Locale.ROOT, "%.0f ", aws.elevation(54.183, lon)));
+            d("AWS z%d Helgoland W-E: %s", z, sb);
+            sb = new StringBuilder();
+            for (double lon = 12.20; lon <= 12.50; lon += 0.02) sb.append(String.format(Locale.ROOT, "%.1f ", aws.elevation(45.43, lon)));
+            d("AWS z%d Venice lagoon W-E: %s", z, sb);
+            d("AWS z%d Lake Constance %.1f, Dead Sea %.1f, Everest %.0f, Geiseltalsee %.1f", z, aws.elevation(47.6, 9.4), aws.elevation(31.5, 35.5),
+                    aws.elevation(27.9881, 86.9250), aws.elevation(51.295, 11.88));
+        }
     }
 }
