@@ -18,6 +18,13 @@ jobs:
         run: |
           set -o pipefail
           ./gradlew build --stacktrace 2>&1 | tee build.log
+      - name: data diagnostics
+        if: success()
+        continue-on-error: true
+        run: |
+          AQUARIUM_DIAG=1 ./gradlew test --rerun-tasks 2>&1 | tee diag.log || true
+          grep "DIAG " diag.log | sed 's/^.*DIAG /DIAG /' | while IFS= read -r line; do echo "::notice::${line//%/%25}"; done
+          grep -E "FAILED|Exception|error:" diag.log | head -20 | while IFS= read -r line; do echo "::warning::${line//%/%25}"; done
       - name: report errors
         if: failure()
         run: |

@@ -4,8 +4,6 @@
  */
 package dev.esiliw.aquarium.data;
 
-import dev.esiliw.aquarium.Aquarium;
-import net.fabricmc.loader.api.FabricLoader;
 import org.locationtech.jts.algorithm.locate.IndexedPointInAreaLocator;
 import org.locationtech.jts.geom.Coordinate;
 import org.locationtech.jts.geom.Geometry;
@@ -41,7 +39,7 @@ import java.util.concurrent.ConcurrentHashMap;
 public final class OceanPolygons {
     private static final GeometryFactory GF = new GeometryFactory();
     private static final HttpClient HTTP = HttpClient.newBuilder().connectTimeout(Duration.ofSeconds(15)).build();
-    private static final Path CACHE = FabricLoader.getInstance().getGameDir().resolve("aquarium-cache").resolve("ocean");
+    private static final Path CACHE = DataEnv.cacheRoot().resolve("ocean");
 
     private record Cell(IndexedPointInAreaLocator locator, boolean empty) {
     }
@@ -70,7 +68,7 @@ public final class OceanPolygons {
             Cell c = this.cells.get(key);
             if (c != null) return c;
         }
-        CompletableFuture<Cell> f = this.pending.computeIfAbsent(key, k -> CompletableFuture.supplyAsync(() -> this.load(cx, cy), Aquarium.IO_EXECUTOR));
+        CompletableFuture<Cell> f = this.pending.computeIfAbsent(key, k -> CompletableFuture.supplyAsync(() -> this.load(cx, cy), DataEnv.IO_EXECUTOR));
         Cell c;
         try {
             c = f.join();
@@ -97,7 +95,7 @@ public final class OceanPolygons {
                 Files.createDirectories(file.getParent());
                 Files.write(file, bytes);
             } catch (IOException e) {
-                Aquarium.LOGGER.warn("Failed to cache ocean cell {}", file, e);
+                DataEnv.LOGGER.warn("Failed to cache ocean cell {}", file, e);
             }
         }
         if (bytes.length == 0) return EMPTY;
@@ -110,7 +108,7 @@ public final class OceanPolygons {
             Geometry all = GF.buildGeometry(parts);
             return new Cell(new IndexedPointInAreaLocator(all), false);
         } catch (Exception e) {
-            Aquarium.LOGGER.warn("Bad ocean cell {}/{}: {}", cx, cy, e.toString());
+            DataEnv.LOGGER.warn("Bad ocean cell {}/{}: {}", cx, cy, e.toString());
             try {
                 Files.deleteIfExists(file);
             } catch (IOException ignored) {
@@ -124,11 +122,11 @@ public final class OceanPolygons {
         for (int attempt = 0; attempt < 3; attempt++) {
             try {
                 HttpResponse<byte[]> r = HTTP.send(HttpRequest.newBuilder(URI.create(url)).timeout(Duration.ofSeconds(60))
-                        .header("User-Agent", "Aquarium/" + Aquarium.VERSION).GET().build(), HttpResponse.BodyHandlers.ofByteArray());
+                        .header("User-Agent", "Aquarium/" + DataEnv.version()).GET().build(), HttpResponse.BodyHandlers.ofByteArray());
                 if (r.statusCode() == 200) return r.body();
                 if (r.statusCode() == 404) return new byte[0];
             } catch (IOException e) {
-                Aquarium.LOGGER.warn("Ocean download failed {} ({})", url, e.toString());
+                DataEnv.LOGGER.warn("Ocean download failed {} ({})", url, e.toString());
             } catch (InterruptedException e) {
                 Thread.currentThread().interrupt();
                 return null;

@@ -22,9 +22,6 @@ import net.minecraft.resources.ResourceLocation;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
-import java.util.concurrent.ExecutorService;
-import java.util.concurrent.Executors;
-import java.util.concurrent.atomic.AtomicInteger;
 
 public class Aquarium implements ModInitializer {
     public static final String ID = "aquarium";
@@ -33,16 +30,7 @@ public class Aquarium implements ModInitializer {
             .map(c -> c.getMetadata().getVersion().getFriendlyString()).orElse("dev");
 
     /** downloads and geocoding run here so world generation threads aren't all stuck on the network */
-    public static final ExecutorService IO_EXECUTOR = Executors.newFixedThreadPool(6, new java.util.concurrent.ThreadFactory() {
-        private final AtomicInteger n = new AtomicInteger();
-
-        @Override
-        public Thread newThread(Runnable r) {
-            Thread t = new Thread(r, "aquarium-io-" + this.n.incrementAndGet());
-            t.setDaemon(true);
-            return t;
-        }
-    });
+    public static final java.util.concurrent.ExecutorService IO_EXECUTOR = dev.esiliw.aquarium.data.DataEnv.IO_EXECUTOR;
 
     @Override
     public void onInitialize() {

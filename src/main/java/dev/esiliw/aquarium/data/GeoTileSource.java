@@ -4,8 +4,6 @@
  */
 package dev.esiliw.aquarium.data;
 
-import dev.esiliw.aquarium.Aquarium;
-import net.fabricmc.loader.api.FabricLoader;
 
 import java.io.ByteArrayInputStream;
 import java.io.IOException;
@@ -52,7 +50,7 @@ public final class GeoTileSource {
         this.zoom = zoom;
         this.format = format;
         this.memoryTiles = memoryTiles;
-        this.cacheRoot = FabricLoader.getInstance().getGameDir().resolve("aquarium-cache").resolve(layer).resolve(String.valueOf(zoom));
+        this.cacheRoot = DataEnv.cacheRoot().resolve(layer).resolve(String.valueOf(zoom));
         this.loaded = new LinkedHashMap<>(64, 0.75f, true) {
             @Override
             protected boolean removeEldestEntry(Map.Entry<Long, TerrariumRasterReader.Raster> eldest) {
@@ -99,7 +97,7 @@ public final class GeoTileSource {
             if (r != null) return r;
         }
         CompletableFuture<TerrariumRasterReader.Raster> future = this.pending.computeIfAbsent(key, k ->
-                CompletableFuture.supplyAsync(() -> this.load(tx, ty), Aquarium.IO_EXECUTOR));
+                CompletableFuture.supplyAsync(() -> this.load(tx, ty), DataEnv.IO_EXECUTOR));
         TerrariumRasterReader.Raster r;
         try {
             r = future.join();
@@ -124,7 +122,7 @@ public final class GeoTileSource {
         try {
             if (Files.isRegularFile(file)) bytes = Files.readAllBytes(file);
         } catch (IOException e) {
-            Aquarium.LOGGER.warn("Failed to read cached tile {}", file, e);
+            DataEnv.LOGGER.warn("Failed to read cached tile {}", file, e);
         }
         if (bytes == null) {
             bytes = this.download(tx, ty);
@@ -135,13 +133,13 @@ public final class GeoTileSource {
                 Files.write(tmp, bytes);
                 Files.move(tmp, file, java.nio.file.StandardCopyOption.REPLACE_EXISTING);
             } catch (IOException e) {
-                Aquarium.LOGGER.warn("Failed to cache tile {}", file, e);
+                DataEnv.LOGGER.warn("Failed to cache tile {}", file, e);
             }
         }
         try {
             return TerrariumRasterReader.read(new ByteArrayInputStream(bytes), this.format);
         } catch (IOException e) {
-            Aquarium.LOGGER.error("Corrupt {} tile {}/{}/{}, deleting cache entry", this.layer, this.zoom, tx, ty, e);
+            DataEnv.LOGGER.error("Corrupt {} tile {}/{}/{}, deleting cache entry", this.layer, this.zoom, tx, ty, e);
             try {
                 Files.deleteIfExists(file);
             } catch (IOException ignored) {
@@ -156,14 +154,14 @@ public final class GeoTileSource {
             try {
                 HttpRequest req = HttpRequest.newBuilder(URI.create(url))
                         .timeout(Duration.ofSeconds(60))
-                        .header("User-Agent", "Aquarium/" + Aquarium.VERSION + " (Fabric port of Terrarium)")
+                        .header("User-Agent", "Aquarium/" + DataEnv.version() + " (Fabric port of Terrarium)")
                         .GET().build();
                 HttpResponse<byte[]> resp = HTTP.send(req, HttpResponse.BodyHandlers.ofByteArray());
                 if (resp.statusCode() == 200) return resp.body();
                 if (resp.statusCode() == 404) return null;
-                Aquarium.LOGGER.warn("HTTP {} for {}", resp.statusCode(), url);
+                DataEnv.LOGGER.warn("HTTP {} for {}", resp.statusCode(), url);
             } catch (IOException e) {
-                Aquarium.LOGGER.warn("Download failed for {} (attempt {}): {}", url, attempt + 1, e.toString());
+                DataEnv.LOGGER.warn("Download failed for {} (attempt {}): {}", url, attempt + 1, e.toString());
             } catch (InterruptedException e) {
                 Thread.currentThread().interrupt();
                 return null;

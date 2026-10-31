@@ -18,6 +18,16 @@ dependencies {
 	include(implementation("org.tukaani:xz:1.9"))
 	// polygon maths for the ocean outlines
 	include(implementation("org.locationtech.jts:jts-core:1.19.0"))
+
+	testImplementation "org.junit.jupiter:junit-jupiter:5.10.2"
+	testRuntimeOnly "org.junit.platform:junit-platform-launcher"
+}
+
+test {
+	useJUnitPlatform()
+	testLogging { showStandardStreams = true }
+	environment "AQUARIUM_DIAG", System.getenv("AQUARIUM_DIAG") ?: ""
+
 }
 
 processResources {
