@@ -1,0 +1,21 @@
+{
+	"schemaVersion": 1,
+	"id": "aquarium",
+	"version": "${version}",
+	"name": "Aquarium",
+	"description": "A Fabric 1.20.1 port of Terrarium: generates a replica of the Earth from real elevation and land-cover data. Includes /geotp and /geotool.",
+	"authors": ["esiliw"],
+	"contributors": ["gegy (original Terrarium)"],
+	"contact": { "sources": "https://github.com/esiliw/aquarium" },
+	"license": "LGPL-3.0-only",
+	"environment": "*",
+	"entrypoints": {
+		"main": ["dev.esiliw.aquarium.Aquarium"]
+	},
+	"depends": {
+		"fabricloader": ">=0.14.21",
+		"minecraft": "1.20.1",
+		"java": ">=17",
+		"fabric-api": "*"
+	}
+}

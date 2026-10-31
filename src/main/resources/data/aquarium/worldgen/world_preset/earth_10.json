@@ -1,0 +1,40 @@
+{
+  "dimensions": {
+    "minecraft:overworld": {
+      "type": "aquarium:earth_tall",
+      "generator": {
+        "type": "aquarium:earth",
+        "settings": {
+          "world_scale": 10,
+          "vertical_scale": 10,
+          "sea_level": 63,
+          "min_y": -512,
+          "height": 2544,
+          "spawn_lat": 37.9122,
+          "spawn_lon": 139.0613
+        }
+      }
+    },
+    "minecraft:the_nether": {
+      "type": "minecraft:the_nether",
+      "generator": {
+        "type": "minecraft:noise",
+        "settings": "minecraft:nether",
+        "biome_source": {
+          "type": "minecraft:multi_noise",
+          "preset": "minecraft:nether"
+        }
+      }
+    },
+    "minecraft:the_end": {
+      "type": "minecraft:the_end",
+      "generator": {
+        "type": "minecraft:noise",
+        "settings": "minecraft:end",
+        "biome_source": {
+          "type": "minecraft:the_end"
+        }
+      }
+    }
+  }
+}
