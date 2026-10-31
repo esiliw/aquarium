@@ -11,7 +11,9 @@ import org.locationtech.jts.geom.GeometryFactory;
 import org.locationtech.jts.geom.LinearRing;
 import org.locationtech.jts.geom.Location;
 import org.locationtech.jts.geom.MultiPolygon;
+import org.locationtech.jts.geom.LineString;
 import org.locationtech.jts.geom.Polygon;
+import org.locationtech.jts.operation.distance.IndexedFacetDistance;
 import org.tukaani.xz.SingleXZInputStream;
 
 import java.io.BufferedInputStream;
@@ -41,10 +43,12 @@ public final class OceanPolygons {
     private static final HttpClient HTTP = HttpClient.newBuilder().connectTimeout(Duration.ofSeconds(15)).build();
     private static final Path CACHE = DataEnv.cacheRoot().resolve("ocean");
 
-    private record Cell(IndexedPointInAreaLocator locator, boolean empty) {
+    /** locator for inside/outside, coast = only the real coastline segments (not the cell's clipping box), in scaled coords */
+    private record Cell(IndexedPointInAreaLocator locator, IndexedFacetDistance coast, double xScale, boolean empty) {
     }
 
-    private static final Cell EMPTY = new Cell(null, true);
+    private static final Cell EMPTY = new Cell(null, null, 1, true);
+    private static final double METERS_PER_DEGREE = GeoProjection.EQUATOR_CIRCUMFERENCE / 360.0;
 
     private final Map<Long, Cell> cells = new LinkedHashMap<>(64, 0.75f, true) {
         @Override
@@ -60,6 +64,34 @@ public final class OceanPolygons {
         Cell cell = this.cell(cx, cy);
         if (cell.empty) return null;
         return cell.locator.locate(new Coordinate(lon, lat)) != Location.EXTERIOR;
+    }
+
+    /**
+     * Distance in metres from a point to the nearest real coastline, capped at maxMeters
+     * (also looks into neighbouring cells when the cell edge is closer than the coast found so far).
+     */
+    public double coastDistance(double lat, double lon, double maxMeters) {
+        int cx = (int) Math.floor(lon), cy = (int) Math.floor(lat);
+        double best = maxMeters;
+        double maxDeg = maxMeters / METERS_PER_DEGREE;
+        double cos = Math.max(0.05, Math.cos(Math.toRadians(lat)));
+        for (int dy = -1; dy <= 1; dy++) {
+            for (int dx = -1; dx <= 1; dx++) {
+                int nx = cx + dx, ny = cy + dy;
+                if (nx < -180 || nx >= 180 || ny < -90 || ny >= 90) continue;
+                if (dx != 0 || dy != 0) {
+                    // skip neighbours further away than the best distance so far
+                    double ex = dx < 0 ? (lon - cx) * cos : dx > 0 ? (cx + 1 - lon) * cos : 0;
+                    double ey = dy < 0 ? lat - cy : dy > 0 ? cy + 1 - lat : 0;
+                    if (Math.hypot(ex, ey) * METERS_PER_DEGREE >= best) continue;
+                }
+                Cell cell = this.cell(nx, ny);
+                if (cell.empty || cell.coast == null) continue;
+                double d = cell.coast.distance(GF.createPoint(new Coordinate(lon * cell.xScale, lat)));
+                best = Math.min(best, d * METERS_PER_DEGREE);
+            }
+        }
+        return Math.min(best, maxMeters);
     }
 
     private Cell cell(int cx, int cy) {
@@ -110,7 +142,8 @@ public final class OceanPolygons {
             }
             if (parts.isEmpty()) return EMPTY;
             Geometry all = GF.createMultiPolygon(parts.toArray(new Polygon[0]));
-            return new Cell(new IndexedPointInAreaLocator(all), false);
+            double xScale = Math.max(0.05, Math.cos(Math.toRadians(cy + 0.5)));
+            return new Cell(new IndexedPointInAreaLocator(all), coastLines(parts, cx, cy, xScale), xScale, false);
         } catch (Exception e) {
             DataEnv.LOGGER.warn("Bad ocean cell {}/{}: {}", cx, cy, e.toString());
             try {
@@ -119,6 +152,42 @@ public final class OceanPolygons {
             }
             return EMPTY;
         }
+    }
+
+    /** the polygon boundaries minus the parts that only run along the 1x1 degree clipping box */
+    private static IndexedFacetDistance coastLines(List<Polygon> parts, int cx, int cy, double xScale) {
+        List<LineString> lines = new ArrayList<>();
+        for (Polygon poly : parts) {
+            addCoast(poly.getExteriorRing().getCoordinates(), cx, cy, xScale, lines);
+            for (int h = 0; h < poly.getNumInteriorRing(); h++) addCoast(poly.getInteriorRingN(h).getCoordinates(), cx, cy, xScale, lines);
+        }
+        if (lines.isEmpty()) return null;
+        return new IndexedFacetDistance(GF.createMultiLineString(lines.toArray(new LineString[0])));
+    }
+
+    private static void addCoast(Coordinate[] ring, int cx, int cy, double xScale, List<LineString> out) {
+        List<Coordinate> run = new ArrayList<>();
+        for (int i = 0; i + 1 < ring.length; i++) {
+            Coordinate a = ring[i], b = ring[i + 1];
+            if (onBox(a, b, cx, cy)) {
+                flush(run, out);
+                continue;
+            }
+            if (run.isEmpty()) run.add(new Coordinate(a.x * xScale, a.y));
+            run.add(new Coordinate(b.x * xScale, b.y));
+        }
+        flush(run, out);
+    }
+
+    private static void flush(List<Coordinate> run, List<LineString> out) {
+        if (run.size() >= 2) out.add(GF.createLineString(run.toArray(new Coordinate[0])));
+        run.clear();
+    }
+
+    private static boolean onBox(Coordinate a, Coordinate b, int cx, int cy) {
+        final double eps = 2e-5;
+        return (Math.abs(a.x - cx) < eps && Math.abs(b.x - cx) < eps) || (Math.abs(a.x - cx - 1) < eps && Math.abs(b.x - cx - 1) < eps)
+                || (Math.abs(a.y - cy) < eps && Math.abs(b.y - cy) < eps) || (Math.abs(a.y - cy - 1) < eps && Math.abs(b.y - cy - 1) < eps);
     }
 
     private static byte[] download(int cx, int cy) {

@@ -45,6 +45,11 @@ public final class EarthData {
         return this.ocean.oceanAt(lat, lon);
     }
 
+    /** metres to the nearest coastline from the outlines (capped) */
+    public double coastDistance(double lat, double lon, double maxMeters) {
+        return this.ocean.coastDistance(lat, lon, maxMeters);
+    }
+
     /** metres per land-cover pixel at the equator */
     public double coverPixelMeters() {
         return GeoProjection.EQUATOR_CIRCUMFERENCE / GeoTileSource.globalWidth(this.cover.zoom());
@@ -59,7 +64,10 @@ public final class EarthData {
         TerrariumRasterReader.Raster c = this.cover.getTile(tx, ty);
         if (c == null) return null;
         TerrariumRasterReader.Raster e = this.coarseElevation.getTile(tx, ty);
-        LakeTile t = LakeTile.build(c, Cover.WATER.id, (px, py) -> e == null ? 0 : e.get(px, py));
+        int zoom = this.cover.zoom();
+        LakeTile t = LakeTile.build(c, Cover.WATER.id, (px, py) -> e == null ? 0 : e.get(px, py),
+                (px, py) -> this.ocean.oceanAt(GeoProjection.latOfPixel(ty * GeoTileSource.TILE_SIZE + py + 0.5, zoom),
+                        GeoProjection.lonOfPixel(tx * GeoTileSource.TILE_SIZE + px + 0.5, zoom)));
         synchronized (this.lakes) {
             this.lakes.put(key, t);
         }

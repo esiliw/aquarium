@@ -25,7 +25,12 @@ public final class LakeTile {
         double get(int px, int py);
     }
 
-    static LakeTile build(TerrariumRasterReader.Raster cover, int waterId, ElevationAtPixel elevation) {
+    public interface OceanAtPixel {
+        /** TRUE/FALSE from the coastline outlines, null if unknown */
+        Boolean get(int px, int py);
+    }
+
+    static LakeTile build(TerrariumRasterReader.Raster cover, int waterId, ElevationAtPixel elevation, OceanAtPixel ocean) {
         int w = cover.width, h = cover.height;
         boolean[] water = new boolean[w * h];
         for (int i = 0; i < water.length; i++) water[i] = cover.values[i] == waterId;
@@ -70,6 +75,20 @@ public final class LakeTile {
             if (!ring.isEmpty()) {
                 java.util.Collections.sort(ring);
                 ringMin = ring.get(Math.min(ring.size() - 1, (int) (ring.size() * 0.2)));
+            }
+            // land-cover water that is really the sea (the outlines know the coast far better than 250 m pixels): not a lake
+            if (ocean != null) {
+                int samples = 0, sea = 0;
+                int stride = Math.max(1, tail / 64);
+                for (int q = 0; q < tail; q += stride) {
+                    Boolean o = ocean.get(queue[q] % w, queue[q] / w);
+                    samples++;
+                    if (Boolean.TRUE.equals(o)) sea++;
+                }
+                if (sea > 0 && sea >= samples * 0.15) {
+                    for (int q = 0; q < tail; q++) water[queue[q]] = false;
+                    continue;
+                }
             }
             short lv = (short) Math.max(Short.MIN_VALUE + 1, Math.min(Short.MAX_VALUE, Math.floor(ringMin)));
             for (int q = 0; q < tail; q++) level[queue[q]] = lv;

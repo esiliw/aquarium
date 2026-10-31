@@ -51,7 +51,15 @@ public final class TerrainModel {
         Boolean outline = this.data.oceanAt(lat, lon);
         boolean ocean = outline != null ? outline : e < 0;
         if (ocean) {
-            e = Math.min(e, -2.0);
+            // the elevation data is coarse and often reads ~0 m right off the coast: make the sea floor drop away
+            // from the real coastline, and use the bathymetry wherever it is deeper than that
+            double minDepth = 2.0;
+            if (outline != null) {
+                double coast = this.data.coastDistance(lat, lon, 2500.0);
+                minDepth = Math.min(2.0 + coast * 0.03, 70.0);
+                minDepth *= 1.0 + 0.15 * dev.esiliw.aquarium.data.Noise.smooth(x / 37.0, z / 37.0, 21);
+            }
+            e = Math.min(e, -minDepth);
             int top = this.surfaceY(e);
             return new Column(top, sea - 1, e, Cover.WATER, true, false, lat);
         }
@@ -62,7 +70,9 @@ public final class TerrainModel {
 
         EarthData.Water w = this.data.water(lat, lon);
         if (w.fraction() > 0) {
-            int lakeY = this.surfaceY(Math.max(w.level(), 0.5));
+            // same convention as the sea: the water surface sits one block under ground at that elevation,
+            // so lakes near sea level end up exactly at the sea's height instead of one block above it
+            int lakeY = this.surfaceY(Math.max(w.level(), 0.5)) - 1;
             boolean isLake = (w.fraction() > 0.1 && e <= w.level() + 1.0) || (w.fraction() > 0.97 && e <= w.level() + 6.0);
             if (isLake) {
                 double shoreMeters = w.shoreDistance() * this.data.coverPixelMeters() * Math.cos(Math.toRadians(lat));

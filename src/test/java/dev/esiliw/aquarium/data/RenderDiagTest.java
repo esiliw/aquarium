@@ -58,8 +58,11 @@ public class RenderDiagTest {
                     else rgb = mix(0x9ff0e0, 0x0a6a5a, t);
                     if (c.waterTop() != 62) rgb = mix(rgb, 0xff00ff, 0.35);   // water surface not at sea level
                 } else {
-                    double t = Math.min(1, Math.max(0, (c.top() - 62) / 20.0));
-                    rgb = mix(0x9ccc65, 0x6d4c41, t);
+                    // banded colours so every block of height is visible, whatever the absolute elevation
+                    int band = Math.floorMod(c.top(), 10);
+                    rgb = mix(0x9ccc65, 0x6d4c41, band / 10.0);
+                    if (c.top() <= 63) rgb = 0xf0e68c;                      // at sea level
+                    if (model.surfaceY(c.elevation()) < c.top()) rgb = 0xff8c00;   // ground raised to hold a lake in
                     int west = i > 0 ? tops[i - 1 + j * w] : c.top(), north = j > 0 ? tops[i + (j - 1) * w] : c.top();
                     int shade = (c.top() - west) + (c.top() - north);
                     rgb = shade > 0 ? mix(rgb, 0xffffff, Math.min(0.5, shade * 0.15)) : shade < 0 ? mix(rgb, 0x000000, Math.min(0.5, -shade * 0.15)) : rgb;
@@ -70,12 +73,12 @@ public class RenderDiagTest {
                 double e = data.elevation(lat, lon);
                 Boolean oc = data.oceanAt(lat, lon);
                 EarthData.Water wt = data.water(lat, lon);
-                int g = (int) Math.max(0, Math.min(255, 60 + e * 2.5));
+                int g = (int) Math.max(0, Math.min(255, 60 + Math.floorMod((int) e, 40) * 4));
                 int r2 = g, g2 = g, b2 = g;
                 if (e < 0) { r2 = 40; g2 = 40; b2 = (int) Math.max(80, 200 + e * 3); }
                 if (oc == null) r2 = Math.min(255, r2 + 90);                 // red tint: no outline data
                 else if (oc) b2 = Math.min(255, b2 + 90);                   // blue tint: outline says sea
-                if (wt.fraction() > 0) g2 = Math.min(255, g2 + (int) (120 * wt.fraction()));   // green tint: land-cover water
+                if (wt.fraction() > 0) { r2 /= 3; g2 = Math.min(255, 120 + (int) (130 * wt.fraction())); b2 /= 3; }   // green: land-cover water
                 raw.setRGB(i, j, (r2 << 16) | (g2 << 8) | b2);
             }
         }
