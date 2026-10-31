@@ -14,11 +14,28 @@ public final class EarthData {
     public static final int ELEVATION_MAX_ZOOM = 6;
     public static final int COVER_MAX_ZOOM = 4;
 
-    private static final java.util.Map<Double, EarthData> SHARED = new java.util.concurrent.ConcurrentHashMap<>();
+    /** where the data comes from: gegy's Terrarium server (worlds made before 0.4) or open public sources */
+    public enum Source {
+        TERRARIUM, OPEN
+    }
 
-    /** One shared instance per world scale, so the generator and the biome source share tile caches. */
+    private static final java.util.Map<String, EarthData> SHARED = new java.util.concurrent.ConcurrentHashMap<>();
+
+    /** One shared instance per world scale and source, so the generator and the biome source share tile caches. */
     public static EarthData forScale(double worldScale) {
-        return SHARED.computeIfAbsent(worldScale, EarthData::new);
+        return get(worldScale, Source.TERRARIUM);
+    }
+
+    public static EarthData get(double worldScale, Source source) {
+        return SHARED.computeIfAbsent(worldScale + "/" + source, k -> new EarthData(worldScale, source));
+    }
+
+    private final Source source;
+    private final AwsElevation aws;          // OPEN: fine elevation + bathymetry
+    private final AwsElevation awsCoarse;    // OPEN: coarse elevation for whole-cell decisions
+
+    public Source source() {
+        return this.source;
     }
 
     private final GeoTileSource elevation;
@@ -34,7 +51,15 @@ public final class EarthData {
         }
     };
 
-    private EarthData(double worldScale) {
+    private EarthData(double worldScale, Source source) {
+        this.source = source;
+        if (source == Source.OPEN) {
+            this.aws = new AwsElevation(AwsElevation.zoomFor(worldScale), 256);
+            this.awsCoarse = new AwsElevation(6, 16);
+        } else {
+            this.aws = null;
+            this.awsCoarse = null;
+        }
         this.elevation = new GeoTileSource("elevation2", GeoTileSource.zoomForScale(worldScale, 0, ELEVATION_MAX_ZOOM),
                 TerrariumRasterReader.FORMAT_SHORT, 48);
         this.cover = new GeoTileSource("landcover", GeoTileSource.zoomForScale(worldScale, 0, COVER_MAX_ZOOM),
@@ -54,7 +79,8 @@ public final class EarthData {
             int sea = 0, n = 0;
             for (int j = 0; j < 7; j++) {
                 for (int i = 0; i < 7; i++) {
-                    double v = BATHYMETRY.rawAt(cy + (j + 0.5) / 7.0, cx + (i + 0.5) / 7.0);
+                    double la = cy + (j + 0.5) / 7.0, lo = cx + (i + 0.5) / 7.0;
+                    double v = this.awsCoarse != null ? this.awsCoarse.elevation(la, lo) : BATHYMETRY.rawAt(la, lo);
                     if (Double.isNaN(v)) continue;
                     n++;
                     if (v < -1) sea++;
@@ -66,6 +92,7 @@ public final class EarthData {
 
     /** smooth sea-floor depth (metres, negative) filled in where the elevation data has no bathymetry, NaN if unknown */
     public double bathymetry(double lat, double lon) {
+        if (this.aws != null) return Double.NaN;          // the open elevation already has real sea depths everywhere
         return BATHYMETRY.depthAt(lat, lon);
     }
 
@@ -158,6 +185,7 @@ public final class EarthData {
 
     /** Elevation in metres, bicubic (Catmull-Rom) interpolation between data pixels. */
     public double elevation(double lat, double lon) {
+        if (this.aws != null) return this.aws.elevation(lat, lon);
         int zoom = this.elevation.zoom();
         double fx = GeoProjection.pixelX(lon, zoom) - 0.5;
         double fy = GeoProjection.pixelY(lat, zoom) - 0.5;
@@ -192,6 +220,7 @@ public final class EarthData {
     }
 
     public int elevationZoom() {
+        if (this.aws != null) return this.aws.zoom();
         return this.elevation.zoom();
     }
 

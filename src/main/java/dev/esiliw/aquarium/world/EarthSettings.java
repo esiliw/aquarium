@@ -18,9 +18,19 @@ import dev.esiliw.aquarium.data.GeoProjection;
  * @param spawnLon      spawn longitude
  * @param projection    "mercator" (true shapes) or "equirectangular" (Terrarium's original; the default so worlds made
  *                      before this setting existed keep their layout)
+ * @param dataSource    "open" (AWS terrain tiles, ESA WorldCover, OpenStreetMap) or "terrarium" (gegy's server; the
+ *                      default so older worlds keep generating the same way)
  */
 public record EarthSettings(double worldScale, double verticalScale, int heightOffset, int seaLevel, int minY, int height,
-                            double spawnLat, double spawnLon, GeoProjection.Type projectionType) {
+                            double spawnLat, double spawnLon, GeoProjection.Type projectionType,
+                            EarthData.Source dataSource) {
+    private static final Codec<EarthData.Source> SOURCE_CODEC = Codec.STRING.comapFlatMap(s -> {
+        try {
+            return com.mojang.serialization.DataResult.success(EarthData.Source.valueOf(s.toUpperCase(java.util.Locale.ROOT)));
+        } catch (IllegalArgumentException e) {
+            return com.mojang.serialization.DataResult.error(() -> "Unknown data source " + s + " (use open or terrarium)");
+        }
+    }, t -> t.name().toLowerCase(java.util.Locale.ROOT));
     private static final Codec<GeoProjection.Type> TYPE_CODEC = Codec.STRING.comapFlatMap(s -> {
         try {
             return com.mojang.serialization.DataResult.success(GeoProjection.Type.valueOf(s.toUpperCase(java.util.Locale.ROOT)));
@@ -38,7 +48,8 @@ public record EarthSettings(double worldScale, double verticalScale, int heightO
             Codec.INT.optionalFieldOf("height", 384).forGetter(EarthSettings::height),
             Codec.doubleRange(-90, 90).optionalFieldOf("spawn_lat", 37.9122).forGetter(EarthSettings::spawnLat),
             Codec.doubleRange(-180, 180).optionalFieldOf("spawn_lon", 139.0613).forGetter(EarthSettings::spawnLon),
-            TYPE_CODEC.optionalFieldOf("projection", GeoProjection.Type.EQUIRECTANGULAR).forGetter(EarthSettings::projectionType)
+            TYPE_CODEC.optionalFieldOf("projection", GeoProjection.Type.EQUIRECTANGULAR).forGetter(EarthSettings::projectionType),
+            SOURCE_CODEC.optionalFieldOf("data_source", EarthData.Source.TERRARIUM).forGetter(EarthSettings::dataSource)
     ).apply(i, EarthSettings::new));
 
     public GeoProjection projection() {
@@ -47,6 +58,7 @@ public record EarthSettings(double worldScale, double verticalScale, int heightO
 
     public EarthData createData() {
         // Mercator blocks get smaller away from the equator: pick data detail for ~60 degrees latitude
+        if (this.dataSource == EarthData.Source.OPEN) return EarthData.get(this.worldScale, EarthData.Source.OPEN);
         return EarthData.forScale(this.projectionType == GeoProjection.Type.MERCATOR ? this.worldScale * 0.5 : this.worldScale);
     }
 
