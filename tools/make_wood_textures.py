@@ -31,9 +31,9 @@ def grid(rows, pal):
 # ------------------------------------------------------------------ wood palettes
 WOOD = {
     "palm": dict(
-        bark=["#8a7356", "#7d6749", "#958061"], bark_dark="#5b4934", bark_light="#a8926d",
-        inner=["#d0bb8f", "#c4ad7f", "#dac7a0"], inner_dark="#a88f62",
-        planks=["#c9ae7c", "#bfa271", "#d3b98a"], seam="#a68a5c", grain="#b89b68"),
+        bark=["#bab4a9", "#aea89c", "#c6c1b6"], bark_dark="#7d766b", bark_light="#d6d1c6",
+        inner=["#b47c56", "#a9714c", "#bd875f"], inner_dark="#4f2f22",
+        planks=["#b07a55", "#a46e4b", "#bb8660"], seam="#7a4a32", grain="#4f2f22"),
     "eucalyptus": dict(
         bark=["#a9a497", "#cfc6ae", "#9a978a", "#c79f8c", "#b8a07f"], bark_dark="#7a776a", bark_light="#ddd4bd",
         inner=["#c98e6c", "#bf805f", "#d49c7b"], inner_dark="#9c5e40",
@@ -45,44 +45,20 @@ def bark(w, p):
     r = random.Random(sum(map(ord, w)))
     im = new()
     if w == "palm":
-        # the stubs of old leaf bases: irregular rows of stubs of different sizes, each lit on top, tapering into
-        # a dark gap below, the next row staggered over the gaps (tileable both ways)
-        groove, deep, shade, top = "#6a543c", "#56442f", "#a48a63", "#e0cda9"
-        tones = [["#c9b08a", "#cdb592"], ["#bfa57e", "#c4ab84"], ["#d2bb96", "#c9b08a"], ["#b9a07a", "#c2a982"]]
-        rng = random.Random(77)
-        heights = [5, 4, 3, 4]
-        y0 = 0
-        cells = {}
-        for row, h in enumerate(heights):
-            widths = []
-            while sum(widths) < 16:
-                widths.append(rng.choice([3, 4, 5, 5, 6]))
-            widths[-1] -= sum(widths) - 16
-            if widths[-1] < 3:
-                widths[-2] += widths.pop()
-            x0 = rng.randrange(16)
-            for wdt in widths:
-                tone = rng.choice(tones)
-                for dy in range(h):
-                    for dx in range(wdt):
-                        cells[((x0 + dx) % 16, y0 + dy)] = (dx, dy, wdt, h, tone)
-                x0 += wdt
-            y0 += h
-        for (x, y), (dx, dy, wdt, h, tone) in cells.items():
-            taper = dy >= h - 2 and (dx == 0 or dx == wdt - 1)     # stubs narrow towards the bottom
-            if dx == 0 and dy < h - 1:
-                c = groove
-            elif dy == h - 1:
-                c = deep if (dx == 0 or dx == wdt - 1) else shade
-            elif taper:
-                c = deep
-            elif dy == 0:
-                c = top
-            else:
-                c = pick(r, tone)
-                if dx == wdt // 2 and dy == h - 2 and r.random() < .7:
-                    c = shade                                       # a split in the stub
-            im.putpixel((x, y), hexc(c))
+        # coconut trunk: pale grey-white bands, darker ring scars where fronds fell, fine wavy cracks
+        kind = [k for h, k in [(5, "b"), (1, "s"), (1, "l"), (5, "b"), (1, "s"), (3, "l")] for _ in range(h)]
+        for y in range(16):
+            for x in range(16):
+                k = kind[y]
+                c = pick(r, p["bark"]) if k == "b" else (p["bark_dark"] if k == "s" and r.random() < .7 else pick(r, [p["bark_light"], p["bark"][2]]))
+                im.putpixel((x, y), hexc(c))
+        for x0 in (2, 7, 11, 14):
+            x = x0
+            for y in range(16):
+                if kind[y] == "b" and r.random() < .8:
+                    im.putpixel((x % 16, y), hexc("#8f897e"))
+                if r.random() < .25:
+                    x += r.choice([-1, 1])
     else:
         # pale smooth gum bark with long vertical streaks where it peels, a few rainbow tints
         base = ["#e3dccb", "#d9d2c0", "#cfcbc0", "#e8e2d3"]
@@ -108,16 +84,21 @@ def log_top(w, p, stripped):
     for y in range(16):
         for x in range(16):
             edge = x in (0, 15) or y in (0, 15)
-            if edge and not stripped:
-                c = pick(r, p["bark"])
-            else:
-                d = max(abs(x - 7.5), abs(y - 7.5))
-                if w == "palm":
-                    c = pick(r, p["inner"]) if r.random() < .8 else p["inner_dark"]      # fibres, no rings
+            d = max(abs(x - 7.5), abs(y - 7.5))
+            if w == "palm":
+                if edge and not stripped:
+                    c = pick(r, p["bark"])
+                elif d > 5.5:
+                    c = pick(r, ["#7a5a3a", "#6c4f33"])               # dark outer ring of hard fibres
                 else:
-                    c = p["inner_dark"] if int(d) % 3 == 0 else pick(r, p["inner"])     # growth rings
-                if edge:
-                    c = p["inner_dark"]
+                    c = pick(r, ["#d89a4a", "#cf9045", "#e0a65a"]) if r.random() < .85 else "#b87a3a"
+            else:
+                if edge and not stripped:
+                    c = pick(r, p["bark"])
+                else:
+                    c = p["inner_dark"] if int(d) % 3 == 0 else pick(r, p["inner"])
+                    if edge:
+                        c = p["inner_dark"]
             im.putpixel((x, y), hexc(c))
     return im
 
@@ -133,11 +114,14 @@ def stripped(w, p):
                 c = base if r.random() < .8 else pick(r, ["#d6c99c", "#e0c6a4", "#cfd3ad"])
                 im.putpixel((x, y), hexc(c))
         return im
-    for x in range(16):
-        base = pick(r, p["inner"])
-        for y in range(16):
-            c = base if r.random() < .7 else pick(r, p["inner"] + [p["inner_dark"]])
-            im.putpixel((x, y), hexc(c))
+    # coconut timber: reddish brown with dark fibre flecks running along the trunk
+    for y in range(16):
+        for x in range(16):
+            im.putpixel((x, y), hexc(pick(r, p["inner"])))
+    for _ in range(22):
+        x, y = r.randrange(16), r.randrange(16)
+        for k in range(r.randint(2, 4)):
+            im.putpixel((x, (y + k) % 16), hexc(p["inner_dark"] if k else "#6a3f2c"))
     return im
 
 
@@ -150,11 +134,21 @@ def planks(w, p):
             c = pick(r, p["planks"], [5, 3, 2])
             if y % 4 == 3:
                 c = p["seam"]
-            elif (x == (5 + board * 7) % 16) and y % 4 != 3:
+            elif x == (5 + board * 7) % 16:
                 c = p["seam"]                                   # board ends, staggered
-            elif r.random() < .12:
+            elif w != "palm" and r.random() < .12:
                 c = p["grain"]
             im.putpixel((x, y), hexc(c))
+    if w == "palm":
+        # dark fibre flecks along each board
+        for _ in range(16):
+            x, y = r.randrange(16), r.randrange(16)
+            if y % 4 == 3:
+                continue
+            for k in range(r.randint(2, 3)):
+                xx = (x + k) % 16
+                if xx != (5 + (y // 4) * 7) % 16:
+                    im.putpixel((xx, y), hexc(p["grain"]))
     return im
 
 
@@ -371,8 +365,8 @@ def palm_door_full():
     """beach hut: bleached driftwood, louvred top half, darker weathered palm-wood frame"""
     r = random.Random(41)
     im = Image.new("RGBA", (16, 32), (0, 0, 0, 0))
-    frame, frame_d = ["#a68a5c", "#9a7f53", "#b09466"], "#7f6744"
-    drift, drift_d, gap = WOOD["palm"]["planks"], WOOD["palm"]["grain"], "#8c7149"
+    frame, frame_d = ["#8e5f40", "#83573a", "#99694a"], "#5e3b27"
+    drift, drift_d, gap = WOOD["palm"]["planks"], "#7a4a32", "#4f2f22"
     for y in range(32):
         for x in range(16):
             if x in (0, 15) or y in (0, 31) or y in (15, 16):
@@ -433,7 +427,7 @@ def palm_trapdoor():
     for y in range(16):
         for x in range(16):
             if x in (0, 15) or y in (0, 15):
-                c = pick(r, ["#a68a5c", "#9a7f53"])
+                c = pick(r, ["#8e5f40", "#83573a"])
             elif y % 3 == 0:
                 continue                                           # gaps between the slats
             else:
@@ -478,4 +472,39 @@ for w, p in WOOD.items():
 grid(PALM_SAPLING, {"g": "#5fa236", "G": "#3d7524", "t": "#8a7356"}).save(f"{B}/palm_sapling.png")
 grid(EUC_SAPLING, {"e": "#84ad99", "E": "#5f8a77", "s": "#c6ac9c"}).save(f"{B}/eucalyptus_sapling.png")
 flowers()
+
+
+def coconut():
+    """a coconut: fibrous brown husk, a bit of green-brown"""
+    r = random.Random(91)
+    im = new()
+    husk = ["#6b4a2b", "#7a5532", "#5e3f24", "#86603a"]
+    for y in range(16):
+        for x in range(16):
+            c = pick(r, husk, [4, 3, 2, 1])
+            if (x + y * 3) % 7 == 0:
+                c = "#4a321d"                                     # fibres
+            im.putpixel((x, y), hexc(c))
+    im.save(f"{B}/coconut.png")
+    item = grid([
+        "................",
+        "................",
+        "................",
+        ".......sS.......",
+        ".....hHHHHh.....",
+        "....hHhHHhHh....",
+        "...hHhHHhHHHh...",
+        "...HhHHhHHhHH...",
+        "...hHHhHHhHHd...",
+        "...HHhHHhHHdd...",
+        "...hHHhHHhddd...",
+        "....hHHhHddd....",
+        ".....dHhddd.....",
+        "......dddd......",
+        "................",
+        "................"], {"h": "#86603a", "H": "#6b4a2b", "d": "#4a321d", "s": "#5a7a2e", "S": "#46621f"})
+    item.save(f"{I}/coconut.png")
+
+
+coconut()
 print("ok")

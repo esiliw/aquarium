@@ -128,7 +128,10 @@ def log_state(name):
 
 # palm: a tall bare trunk with a drooping crown of fronds (cherry-style hanging leaves), growing on sand
 write("configured_feature", "palm", {"type": "minecraft:tree", "config": {
-    "decorators": [], "dirt_provider": {"type": "minecraft:simple_state_provider", "state": {"Name": "minecraft:sand"}},
+    "decorators": [{"type": "minecraft:attached_to_leaves", "probability": 0.08, "exclusion_radius_xz": 0, "exclusion_radius_y": 0,
+                    "required_empty_blocks": 1, "directions": ["down"],
+                    "block_provider": {"type": "minecraft:simple_state_provider", "state": {"Name": "aquarium:coconut"}}}],
+    "dirt_provider": {"type": "minecraft:simple_state_provider", "state": {"Name": "minecraft:sand"}},
     "foliage_placer": {"type": "minecraft:cherry_foliage_placer", "radius": 3, "offset": 0, "height": 2,
                        "wide_bottom_layer_hole_chance": 0.6, "corner_hole_chance": 0.5,
                        "hanging_leaves_chance": 0.55, "hanging_leaves_extension_chance": 0.4},

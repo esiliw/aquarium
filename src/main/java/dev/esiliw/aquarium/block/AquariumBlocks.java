@@ -28,6 +28,12 @@ public final class AquariumBlocks {
             BlockBehaviour.Properties.of().mapColor(MapColor.PLANT).noCollission().randomTicks().instabreak().sound(SoundType.CROP)
                     .pushReaction(PushReaction.DESTROY)));
 
+    public static final Block COCONUT = block("coconut", new CoconutBlock(BlockBehaviour.Properties.of().mapColor(MapColor.COLOR_BROWN)
+            .strength(0.5f).sound(SoundType.WOOD).noOcclusion().pushReaction(PushReaction.DESTROY)));
+    /** place it under palm leaves, or eat it */
+    public static final Item COCONUT_ITEM = item("coconut", new BlockItem(COCONUT, new Item.Properties()
+            .food(new FoodProperties.Builder().nutrition(4).saturationMod(0.5f).build())));
+
     public static final Item BLACK_SAND_ITEM = item("black_sand", new BlockItem(BLACK_SAND, new Item.Properties()));
     public static final Item SALT_CRUST_ITEM = item("salt_crust", new BlockItem(SALT_CRUST, new Item.Properties()));
     /** the grain is also what you plant, like carrots */
@@ -82,6 +88,9 @@ public final class AquariumBlocks {
         for (Block f : FLOWERS) net.fabricmc.fabric.api.registry.CompostingChanceRegistry.INSTANCE.add(f.asItem(), 0.65f);
         net.fabricmc.fabric.api.registry.CompostingChanceRegistry.INSTANCE.add(RICE_ITEM, 0.3f);
         AquariumWood.init();
-        ItemGroupEvents.modifyEntriesEvent(CreativeModeTabs.FOOD_AND_DRINKS).register(e -> e.accept(RICE_BOWL));
+        ItemGroupEvents.modifyEntriesEvent(CreativeModeTabs.FOOD_AND_DRINKS).register(e -> {
+            e.accept(RICE_BOWL);
+            e.accept(COCONUT_ITEM);
+        });
     }
 }

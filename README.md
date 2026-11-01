@@ -2,7 +2,7 @@
 
 A Fabric **1.20.1** port of [Terrarium](https://github.com/gegy1000/Terrarium) by gegy: a world type that generates a replica of the Earth from real elevation, land-cover and map data, downloaded as you explore and cached locally.
 
-## Status (0.8.1)
+## Status (0.9.0)
 - World type (Create World → More → World Type): **Earth (Aquarium)**, then **Customize** to set
   - scale 1:N (default 1:10) and metres per block for height (default auto: like the scale, but at least 5 so Everest fits)
   - where the world starts: a place name or `lat, lon`, looked up like `/geotp` (empty = Malmö)
@@ -15,6 +15,7 @@ A Fabric **1.20.1** port of [Terrarium](https://github.com/gegy1000/Terrarium) b
 - Worlds made with versions before 0.4 keep generating from the Terrarium server exactly as before (`"data_source": "terrarium"`, equirectangular projection)
 - Failed downloads are retried until they succeed instead of being treated as "no data", so a server hiccup can't bake holes into the world. Everything downloaded is kept in `.minecraft/aquarium-cache`.
 - Biomes from land cover, climate (Köppen-Geiger) and altitude: vanilla biomes plus Aquarium's own Mixed Forest, Mediterranean Woodland, Chaparral, Steppe, Cold Desert, Tundra and Subtropical Forest (vanilla trees and mobs, own grass colours and tree mixes). The ground follows the climate too: dry grass and coarse dirt in steppes, gravel in cold deserts, moss on tundra, red sand in the Outback, black basalt and black sand in volcanic regions. Irrigated desert farmland (the Nile) stays green
+- New blocks and plants (0.9): **rice** that grows standing in water, with flooded **paddies** generated on farmland across monsoon Asia; **black sand** on volcanic beaches; **salt crust** on the world's big salt flats; **lavender, edelweiss, lupine, hibiscus and Sturt's desert pea** in the biomes where they grow; **palm** (with coconuts) and **eucalyptus** wood sets with their trees, on new **Tropical Coast**, **Eucalyptus Forest** and **Eucalyptus Woodland** biomes. No palm or eucalyptus signs and boats yet
 - `/geotp <lat> <lon>` and `/geotp <place name>` (OpenStreetMap Nominatim), op level 2
 - `/geotool` - where am I (lat/lon with an OpenStreetMap link, elevation, land cover, local scale)
 - F3 shows lat/lon, land cover and local scale

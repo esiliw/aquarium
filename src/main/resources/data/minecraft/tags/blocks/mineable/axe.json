@@ -1,6 +1,7 @@
 {
   "replace": false,
   "values": [
+    "aquarium:coconut",
     "aquarium:eucalyptus_button",
     "aquarium:eucalyptus_door",
     "aquarium:eucalyptus_fence",
