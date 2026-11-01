@@ -31,7 +31,7 @@ def grid(rows, pal):
 # ------------------------------------------------------------------ wood palettes
 WOOD = {
     "palm": dict(
-        bark=["#bdb1a0", "#b0a493", "#c8bdac"], bark_dark="#857967", bark_light="#d8cebd",
+        bark=["#8f8079", "#988981", "#857770", "#93847c"], bark_dark="#6f6259", bark_light="#c4b8a9",
         inner=["#b47c56", "#a9714c", "#bd875f"], inner_dark="#4f2f22",
         planks=["#b07a55", "#a46e4b", "#bb8660"], seam="#8a5739", grain="#4f2f22"),
     "eucalyptus": dict(
@@ -45,18 +45,21 @@ def bark(w, p):
     r = random.Random(sum(map(ord, w)))
     im = new()
     if w == "palm":
-        # coconut trunk: pale grey-white bands, darker ring scars where fronds fell, fine wavy cracks
-        kind = [k for h, k in [(5, "b"), (1, "s"), (1, "l"), (5, "b"), (1, "s"), (3, "l")] for _ in range(h)]
+        # coconut trunk (from the photo): mauve-grey bands, lighter ring scars, fine wavy cracks
+        r = random.Random(5)
+        kind = [k for h, k in [(6, "d"), (2, "l"), (5, "d"), (3, "l")] for _ in range(h)]
+        light = ["#c4b8a9", "#b9ac9c", "#ccc1b3"]
         for y in range(16):
             for x in range(16):
-                k = kind[y]
-                c = pick(r, p["bark"]) if k == "b" else (p["bark_dark"] if k == "s" and r.random() < .7 else pick(r, [p["bark_light"], p["bark"][2]]))
+                c = r.choice(p["bark"] if kind[y] == "d" else light)
+                if kind[y] == "l" and r.random() < .1:
+                    c = "#9a8d80"
                 im.putpixel((x, y), hexc(c))
-        for x0 in (4, 11):
+        for x0 in [2, 7, 11, 14]:
             x = x0
             for y in range(16):
-                if kind[y] == "b" and r.random() < .7:
-                    im.putpixel((x % 16, y), hexc("#a09482"))
+                if kind[y] == "d" and r.random() < .85:
+                    im.putpixel((x % 16, y), hexc(p["bark_dark"]))
                 if r.random() < .25:
                     x += r.choice([-1, 1])
     else:
