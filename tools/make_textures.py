@@ -80,33 +80,54 @@ GOLD = ["#d9b84a", "#c9a23b", "#e6ca62", "#b38c2f"]
 GRAIN = ["#e8d27a", "#f0de92", "#d4b85c"]
 
 
-STALKS = [(2, -1), (4, 1), (6, -1), (9, 1), (11, -1), (13, 1)]   # x and which way the leaf tips curl
-HEIGHT = {0: 19, 1: 24, 2: 30, 3: 30}                           # of 32 px; the water surface is at 16
+STALKS = [(2, 1), (5, -1), (7, 1), (10, -1), (12, 1), (14, -1)]   # base x and which way each plant leans
+HEIGHT = {0: 19, 1: 24, 2: 30, 3: 28}                             # of 32 px; the water surface is at 16
 
 
 def plant(stage):
-    """one rice plant, two blocks tall (16x32), bottom half under water"""
-    r = random.Random(200 + stage)
+    """one rice plant, two blocks tall (16x32), bottom half under water: curving stems with leaves branching off"""
+    r = random.Random(300 + stage)
     im = Image.new("RGBA", (16, 32), (0, 0, 0, 0))
-    for n, (x, d) in enumerate(STALKS):
-        h = HEIGHT[stage] - (n % 3)
-        top = 32 - h
-        for y in range(31, top - 1, -1):
-            t = (31 - y) / h                      # 0 at the base, 1 at the tip
-            xx = x + (d if t > .8 and stage >= 2 else 0)
-            if stage == 3:
-                col = r.choice(YELLOW_GREEN) if y > 20 else r.choice(GOLD[:2])
-            else:
-                col = r.choice(GREEN[:3]) if y > 8 else GREEN[2]
-            im.putpixel((xx, y), hexc(col))
-        if stage == 3 and n % 2 == 1:
-            # a grain head arching over and hanging beside the stalk
-            hx = x + d
-            im.putpixel((hx, top), hexc(GOLD[2]))
-            for k in range(1, 7):
-                im.putpixel((hx + d, top + k), hexc(GRAIN[k % 3]))
-                if 2 <= k <= 5:
-                    im.putpixel((hx, top + k), hexc(GRAIN[(k + 1) % 3] if k % 2 else "#c9a23b"))
+
+    def put(x, y, col):
+        if 0 <= x < 16 and 0 <= y < 32:
+            im.putpixel((x, y), hexc(col))
+
+    def colour(y):
+        if stage == 3:
+            return r.choice(YELLOW_GREEN) if y > 22 else r.choice(GOLD[:2])
+        return r.choice(GREEN[:3])
+
+    for n, (x0, d) in enumerate(STALKS):
+        h = HEIGHT[stage] - r.randint(0, 3)
+        bend = r.choice([1, 2, 2, 3]) if stage >= 1 else 1
+        tip = (x0, 31)
+        for k in range(h):
+            t = k / max(1, h - 1)
+            x = x0 + d * round(bend * t * t)              # straight at the base, curving more towards the top
+            y = 31 - k
+            put(x, y, colour(y))
+            tip = (x, y)
+        # one or two leaves peeling away from the stem, going up and outwards
+        for _ in range(1 if stage == 0 else 2):
+            ly = 31 - r.randint(h // 4, max(h // 4 + 1, h * 2 // 3))
+            lx = x0 + d * round(bend * ((31 - ly) / max(1, h - 1)) ** 2)
+            side = -d if r.random() < .6 else d
+            for k in range(1, r.randint(3, 6)):
+                put(lx + side * ((k + 1) // 2), ly - k, colour(ly - k))
+        if stage == 3:
+            # ripe: the head arches over and hangs down
+            x, y = tip
+            put(x + d, y, GOLD[2])
+            put(x + 2 * d, y + 1, GRAIN[0])
+            for k in range(2, 7):
+                put(x + 2 * d, y + k, GRAIN[k % 3])
+                if k % 2 == 0:
+                    put(x + 3 * d, y + k, GRAIN[(k + 1) % 3])
+                    put(x + d, y + k, "#c9a23b")
+        elif stage == 2:
+            x, y = tip
+            put(x + d, y + 1, GREEN[2])                    # leaf tip drooping
     return im
 
 
