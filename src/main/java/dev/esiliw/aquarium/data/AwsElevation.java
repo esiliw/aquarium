@@ -88,8 +88,8 @@ public final class AwsElevation {
     }
 
     /**
-     * removes seams in the source data: lines a pixel or two wide that sit far below (or above) the ground on both sides,
-     * like the crack along 28 N through the Everest massif where two survey tiles meet. A real cliff drops on one side only.
+     * removes seams in the source data: lines a pixel or two wide that sit far below the ground on both sides,
+     * like the crack along 28 N through the Everest massif where two survey tiles meet. A real cliff drops on one side only; sharp peaks are left alone.
      */
     static void despike(float[] t) {
         final int d = 3;
@@ -101,14 +101,14 @@ public final class AwsElevation {
             int ya = Math.max(0, y - d), yb = Math.min(SIZE - 1, y + d), xa = Math.max(0, x - d), xb = Math.min(SIZE - 1, x + d);
             if (ya < y && yb > y) {
                 float a = src[x + ya * SIZE], b = src[x + yb * SIZE];
-                if (v < Math.min(a, b) - limit || v > Math.max(a, b) + limit) {
+                if (v < Math.min(a, b) - limit) {
                     t[i] = a + (b - a) * (y - ya) / (float) (yb - ya);
                     continue;
                 }
             }
             if (xa < x && xb > x) {
                 float a = src[xa + y * SIZE], b = src[xb + y * SIZE];
-                if (v < Math.min(a, b) - limit || v > Math.max(a, b) + limit) t[i] = a + (b - a) * (x - xa) / (float) (xb - xa);
+                if (v < Math.min(a, b) - limit) t[i] = a + (b - a) * (x - xa) / (float) (xb - xa);
             }
         }
     }
