@@ -112,4 +112,9 @@ write("biome", "subtropical_forest", biome("forest", [
     V + "patch_grass_forest", V + "brown_mushroom_normal", V + "red_mushroom_normal", V + "patch_sugar_cane",
     V + "patch_pumpkin", V + "vines"],
     0.9, 0.85))
+# Outback: savanna grass and dead bushes, no trees (Uluru and the red centre)
+write("biome", "outback", biome("savanna", [
+    V + "glow_lichen", V + "patch_grass_savanna", V + "patch_dead_bush_2",
+    V + "brown_mushroom_normal", V + "red_mushroom_normal"],
+    2.0, 0.0, grass=0xBFA35A, foliage=0xAE9A4E, precipitation=False))
 print("ok")

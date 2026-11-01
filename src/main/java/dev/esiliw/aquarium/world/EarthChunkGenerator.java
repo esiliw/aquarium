@@ -154,7 +154,7 @@ public class EarthChunkGenerator extends ChunkGenerator {
             for (int lx = 0; lx < 16; lx++) {
                 int i = (lx + 1) + (lz + 1) * 18;
                 TerrainModel.Column c = cols[i];
-                int top = c.top();
+                int top = Math.max(c.top(), minY + 1);   // never a hole down to the void, whatever the data says
                 if (c.waterTop() == Integer.MIN_VALUE) {
                     // banks hold the water in: never lower than a neighbouring lake or river surface
                     for (int nb : new int[]{i - 1, i + 1, i - 18, i + 18}) {
@@ -185,8 +185,11 @@ public class EarthChunkGenerator extends ChunkGenerator {
                     else surface = depth <= 2 ? SAND : (depth <= 6 ? GRAVEL : MUD);
                     under = surface == SAND ? SANDSTONE : STONE;
                 } else if (slope >= 4) {
-                    surface = STONE;
-                    under = STONE;
+                    // steep rock; in the red Outback (Uluru, Kata Tjuta) it's red, not grey
+                    boolean red = (c.climate() == dev.esiliw.aquarium.data.Climate.BWh || c.climate() == dev.esiliw.aquarium.data.Climate.BSh)
+                            && EarthBiomes.outback(c.lat(), this.projection.lon(x0 + lx + 0.5));
+                    surface = red ? TERRACOTTA : STONE;
+                    under = surface;
                 } else if (c.climate() != dev.esiliw.aquarium.data.Climate.NONE && this.climatePalette(c, x0 + lx, z0 + lz) != null) {
                     surface = this.climatePalette(c, x0 + lx, z0 + lz);
                     if (surface == GRAVEL) under = GRAVEL;

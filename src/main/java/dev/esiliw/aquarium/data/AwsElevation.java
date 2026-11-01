@@ -45,7 +45,45 @@ public final class AwsElevation {
                 out[x + y * SIZE] = (((rgb >> 16) & 255) * 256 + ((rgb >> 8) & 255) + (rgb & 255) / 256f) - 32768f;
             }
         }
+        fillHoles(out);
         return out;
+    }
+
+    /** deeper than the deepest trench or higher than Everest: a "no data" pixel (black = -32768 m), not real ground */
+    static boolean invalid(float v) {
+        return !(v > -11500f && v < 9000f);
+    }
+
+    /** fills "no data" pixels from their valid neighbours, so a hole never becomes a bottomless trench */
+    static void fillHoles(float[] t) {
+        int holes = 0;
+        for (float v : t) if (invalid(v)) holes++;
+        if (holes == 0) return;
+        if (holes == t.length) {
+            java.util.Arrays.fill(t, 0f);
+            return;
+        }
+        boolean[] bad = new boolean[t.length];
+        for (int i = 0; i < t.length; i++) bad[i] = invalid(t[i]);
+        while (holes > 0) {
+            boolean[] next = bad.clone();
+            for (int y = 0; y < SIZE; y++) for (int x = 0; x < SIZE; x++) {
+                int i = x + y * SIZE;
+                if (!bad[i]) continue;
+                double sum = 0;
+                int n = 0;
+                if (x > 0 && !bad[i - 1]) { sum += t[i - 1]; n++; }
+                if (x < SIZE - 1 && !bad[i + 1]) { sum += t[i + 1]; n++; }
+                if (y > 0 && !bad[i - SIZE]) { sum += t[i - SIZE]; n++; }
+                if (y < SIZE - 1 && !bad[i + SIZE]) { sum += t[i + SIZE]; n++; }
+                if (n > 0) {
+                    t[i] = (float) (sum / n);
+                    next[i] = false;
+                    holes--;
+                }
+            }
+            bad = next;
+        }
     }
 
     public static double pixelX(double lon, int zoom) {

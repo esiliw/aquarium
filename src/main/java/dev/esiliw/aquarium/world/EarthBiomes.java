@@ -17,7 +17,7 @@ public final class EarthBiomes {
     /** our own biome: a normal forest with spruce mixed in (data/aquarium/worldgen/biome/mixed_forest.json) */
     public static final ResourceKey<Biome> MIXED_FOREST = key("mixed_forest"), MEDITERRANEAN_WOODLAND = key("mediterranean_woodland"),
             CHAPARRAL = key("chaparral"), STEPPE = key("steppe"), COLD_DESERT = key("cold_desert"), TUNDRA = key("tundra"),
-            SUBTROPICAL_FOREST = key("subtropical_forest");
+            SUBTROPICAL_FOREST = key("subtropical_forest"), OUTBACK = key("outback");
 
     private static ResourceKey<Biome> key(String name) {
         return ResourceKey.create(net.minecraft.core.registries.Registries.BIOME, new net.minecraft.resources.ResourceLocation("aquarium", name));
@@ -32,7 +32,7 @@ public final class EarthBiomes {
             Biomes.WINDSWEPT_SAVANNA, Biomes.DESERT, Biomes.BADLANDS, Biomes.SWAMP, Biomes.MANGROVE_SWAMP, Biomes.MEADOW,
             Biomes.GROVE, Biomes.SNOWY_SLOPES, Biomes.FROZEN_PEAKS, Biomes.JAGGED_PEAKS, Biomes.STONY_PEAKS, Biomes.ICE_SPIKES,
             Biomes.WINDSWEPT_HILLS, Biomes.WINDSWEPT_FOREST, Biomes.STONY_SHORE,
-            MIXED_FOREST, MEDITERRANEAN_WOODLAND, CHAPARRAL, STEPPE, COLD_DESERT, TUNDRA, SUBTROPICAL_FOREST);
+            MIXED_FOREST, MEDITERRANEAN_WOODLAND, CHAPARRAL, STEPPE, COLD_DESERT, TUNDRA, SUBTROPICAL_FOREST, OUTBACK);
 
     private EarthBiomes() {
     }
@@ -119,7 +119,7 @@ public final class EarthBiomes {
         if (Climate.arid(climate)) {
             boolean hot = climate == Climate.BWh || climate == Climate.BSh;
             // the red Outback: badlands colours (no mesa cliffs here, terrain comes from the height data)
-            if (outback(lat, lon) && climate == Climate.BWh && !trees) return Biomes.BADLANDS;
+            if (outback(lat, lon) && climate == Climate.BWh) return trees ? OUTBACK : Biomes.BADLANDS;   // scrub and desert oaks: grass, no trees
             if (trees) return hot ? Biomes.SAVANNA : MEDITERRANEAN_WOODLAND;
             if (bare) return climate == Climate.BWh ? (cover == Cover.BARE_CONSOLIDATED ? Biomes.BADLANDS : Biomes.DESERT)
                     : climate == Climate.BWk ? COLD_DESERT : hot ? Biomes.DESERT : COLD_DESERT;
