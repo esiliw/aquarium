@@ -31,7 +31,7 @@ def grid(rows, pal):
 # ------------------------------------------------------------------ wood palettes
 WOOD = {
     "palm": dict(
-        bark=["#bab4a9", "#aea89c", "#c6c1b6"], bark_dark="#7d766b", bark_light="#d6d1c6",
+        bark=["#bdb1a0", "#b0a493", "#c8bdac"], bark_dark="#857967", bark_light="#d8cebd",
         inner=["#b47c56", "#a9714c", "#bd875f"], inner_dark="#4f2f22",
         planks=["#b07a55", "#a46e4b", "#bb8660"], seam="#8a5739", grain="#4f2f22"),
     "eucalyptus": dict(
@@ -52,11 +52,11 @@ def bark(w, p):
                 k = kind[y]
                 c = pick(r, p["bark"]) if k == "b" else (p["bark_dark"] if k == "s" and r.random() < .7 else pick(r, [p["bark_light"], p["bark"][2]]))
                 im.putpixel((x, y), hexc(c))
-        for x0 in (2, 7, 11, 14):
+        for x0 in (4, 11):
             x = x0
             for y in range(16):
-                if kind[y] == "b" and r.random() < .8:
-                    im.putpixel((x % 16, y), hexc("#8f897e"))
+                if kind[y] == "b" and r.random() < .7:
+                    im.putpixel((x % 16, y), hexc("#a09482"))
                 if r.random() < .25:
                     x += r.choice([-1, 1])
     else:
@@ -474,16 +474,23 @@ flowers()
 
 
 def coconut():
-    """a coconut: fibrous brown husk, a bit of green-brown"""
+    """block texture: the 6x6 face in the middle (uv 5..11) shaded like the item, lit from above; stalk pixel at the top"""
     r = random.Random(91)
     im = new()
-    husk = ["#6b4a2b", "#7a5532", "#5e3f24", "#86603a"]
     for y in range(16):
         for x in range(16):
-            c = pick(r, husk, [4, 3, 2, 1])
-            if (x + y * 3) % 7 == 0:
-                c = "#4a321d"                                     # fibres
+            im.putpixel((x, y), hexc(pick(r, ["#7a5232", "#6b4a2b"])))
+    rows = {5: ["#a87a4c", "#9a6c42"], 6: ["#9a6c42", "#8a6038"], 7: ["#7a5232", "#845a36"],
+            8: ["#7a5232", "#6e4a2c"], 9: ["#64422a", "#5e3f24"], 10: ["#4f3320", "#4a2f1c"]}
+    for y, cols in rows.items():
+        for x in range(5, 11):
+            c = pick(r, cols)
+            if x in (5, 10) and y > 5:
+                c = "#5a3a20" if y < 10 else "#3b2412"            # rounded-off edges
+            if (x * 3 + y) % 7 == 0 and 6 < y < 10:
+                c = "#5e3f24"                                   # fibres
             im.putpixel((x, y), hexc(c))
+    im.putpixel((7, 0), hexc("#5a7a2e"))
     im.save(f"{B}/coconut.png")
     # drawn like the vanilla apple: round body, darker outline in the same colour, lit from the top left
     item = grid([
