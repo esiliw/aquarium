@@ -1,0 +1,22 @@
+name: climate-data
+on:
+  push:
+    branches: [climate]
+    paths: [tools/prepare_climate.py, .github/workflows/climate.yml]
+permissions:
+  contents: write
+jobs:
+  prepare:
+    runs-on: ubuntu-24.04
+    steps:
+      - uses: actions/checkout@v5
+      - run: pip install rasterio numpy pillow
+      - run: python tools/prepare_climate.py climate-out
+      - name: publish to climate-out branch
+        run: |
+          git config user.name "aquarium-ci"; git config user.email "ci@users.noreply.github.com"
+          git checkout --orphan climate-out-tmp
+          git rm -rfq --cached . >/dev/null
+          git add -f climate-out
+          git commit -qm "climate data"
+          git push -qf origin climate-out-tmp:climate-out
