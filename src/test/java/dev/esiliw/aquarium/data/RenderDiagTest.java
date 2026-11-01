@@ -19,6 +19,8 @@ public class RenderDiagTest {
     void render() throws Exception {
         Assumptions.assumeTrue("1".equals(System.getenv("AQUARIUM_DIAG")));
         System.setProperty("java.awt.headless", "true");
+        net.minecraft.SharedConstants.tryDetectVersion();
+        net.minecraft.server.Bootstrap.bootStrap();   // biome keys need the registries
         File out = new File("build/diag");
         out.mkdirs();
         Place[] places = {
@@ -66,6 +68,8 @@ public class RenderDiagTest {
         EarthData data = model.data();
         int bx0 = (int) proj.blockX(p.lon0), bx1 = (int) proj.blockX(p.lon1);
         int bz0 = (int) proj.blockZ(p.lat1), bz1 = (int) proj.blockZ(p.lat0);
+        int step = Math.max(p.step, (int) Math.ceil(Math.max(bx1 - bx0, bz1 - bz0) / 1600.0));   // keep renders within the heap
+        p = new Place(p.name, p.scale, p.vscale, p.lat0, p.lon0, p.lat1, p.lon1, step);
         int w = (bx1 - bx0) / p.step, h = (bz1 - bz0) / p.step;
         BufferedImage fin = new BufferedImage(w, h, BufferedImage.TYPE_INT_RGB);
         BufferedImage raw = new BufferedImage(w, h, BufferedImage.TYPE_INT_RGB);
