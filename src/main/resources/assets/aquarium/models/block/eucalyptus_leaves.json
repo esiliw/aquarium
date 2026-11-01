@@ -1,0 +1,6 @@
+{
+  "parent": "minecraft:block/leaves",
+  "textures": {
+    "all": "aquarium:block/eucalyptus_leaves"
+  }
+}

@@ -1,0 +1,7 @@
+{
+  "parent": "minecraft:block/cube_column",
+  "textures": {
+    "end": "aquarium:block/eucalyptus_log",
+    "side": "aquarium:block/eucalyptus_log"
+  }
+}

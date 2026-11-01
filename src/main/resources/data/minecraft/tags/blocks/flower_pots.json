@@ -1,0 +1,12 @@
+{
+  "replace": false,
+  "values": [
+    "aquarium:potted_desert_pea",
+    "aquarium:potted_edelweiss",
+    "aquarium:potted_eucalyptus_sapling",
+    "aquarium:potted_hibiscus",
+    "aquarium:potted_lavender",
+    "aquarium:potted_lupine",
+    "aquarium:potted_palm_sapling"
+  ]
+}

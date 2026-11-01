@@ -1,0 +1,7 @@
+{
+  "parent": "minecraft:block/cube_column",
+  "textures": {
+    "end": "aquarium:block/stripped_palm_log_top",
+    "side": "aquarium:block/stripped_palm_log"
+  }
+}

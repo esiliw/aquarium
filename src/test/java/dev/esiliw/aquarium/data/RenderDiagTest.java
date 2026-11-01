@@ -162,7 +162,7 @@ public class RenderDiagTest {
             case "birch_forest" -> 0x5aa05a; case "taiga" -> 0x2f5f4f; case "snowy_taiga" -> 0x9fb8b0; case "old_growth_spruce_taiga" -> 0x1f4f3f;
             case "subtropical_forest" -> 0x1f9f5f; case "jungle", "sparse_jungle" -> 0x0f7f2f; case "savanna" -> 0xbdb25f;
             case "mediterranean_woodland" -> 0x8f9f3f; case "chaparral" -> 0xa08f4f; case "steppe" -> 0xd8c878; case "desert" -> 0xf0e0a0;
-            case "cold_desert" -> 0xb8a890; case "badlands" -> 0xc06030; case "outback" -> 0xd08850; case "tundra" -> 0x8a9a7a; case "snowy_plains" -> 0xf0f0f0;
+            case "cold_desert" -> 0xb8a890; case "badlands" -> 0xc06030; case "outback" -> 0xd08850; case "tropical_coast" -> 0xe8d890; case "eucalyptus_forest" -> 0x5f8f7a; case "eucalyptus_woodland" -> 0x9fae7a; case "tundra" -> 0x8a9a7a; case "snowy_plains" -> 0xf0f0f0;
             case "swamp", "mangrove_swamp" -> 0x4f6f3f; case "stony_peaks", "windswept_hills" -> 0x8a8a8a;
             case "frozen_peaks", "jagged_peaks", "snowy_slopes", "ice_spikes" -> 0xe0e8f0; case "river" -> 0x4080ff;
             default -> b.contains("ocean") ? 0x203a80 : 0xff00ff;

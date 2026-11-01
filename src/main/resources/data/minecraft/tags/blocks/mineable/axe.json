@@ -1,0 +1,31 @@
+{
+  "replace": false,
+  "values": [
+    "aquarium:eucalyptus_button",
+    "aquarium:eucalyptus_door",
+    "aquarium:eucalyptus_fence",
+    "aquarium:eucalyptus_fence_gate",
+    "aquarium:eucalyptus_log",
+    "aquarium:eucalyptus_planks",
+    "aquarium:eucalyptus_pressure_plate",
+    "aquarium:eucalyptus_slab",
+    "aquarium:eucalyptus_stairs",
+    "aquarium:eucalyptus_trapdoor",
+    "aquarium:eucalyptus_wood",
+    "aquarium:palm_button",
+    "aquarium:palm_door",
+    "aquarium:palm_fence",
+    "aquarium:palm_fence_gate",
+    "aquarium:palm_log",
+    "aquarium:palm_planks",
+    "aquarium:palm_pressure_plate",
+    "aquarium:palm_slab",
+    "aquarium:palm_stairs",
+    "aquarium:palm_trapdoor",
+    "aquarium:palm_wood",
+    "aquarium:stripped_eucalyptus_log",
+    "aquarium:stripped_eucalyptus_wood",
+    "aquarium:stripped_palm_log",
+    "aquarium:stripped_palm_wood"
+  ]
+}

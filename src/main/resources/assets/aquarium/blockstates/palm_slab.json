@@ -1,0 +1,13 @@
+{
+  "variants": {
+    "type=bottom": {
+      "model": "aquarium:block/palm_slab"
+    },
+    "type=double": {
+      "model": "aquarium:block/palm_planks"
+    },
+    "type=top": {
+      "model": "aquarium:block/palm_slab_top"
+    }
+  }
+}

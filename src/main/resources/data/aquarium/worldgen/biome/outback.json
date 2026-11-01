@@ -73,7 +73,8 @@
       "minecraft:patch_grass_savanna",
       "minecraft:patch_dead_bush_2",
       "minecraft:brown_mushroom_normal",
-      "minecraft:red_mushroom_normal"
+      "minecraft:red_mushroom_normal",
+      "aquarium:flower_desert_pea"
     ],
     [
       "minecraft:freeze_top_layer"

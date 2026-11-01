@@ -83,7 +83,8 @@
       "minecraft:red_mushroom_normal",
       "minecraft:patch_sugar_cane",
       "minecraft:patch_pumpkin",
-      "minecraft:vines"
+      "minecraft:vines",
+      "aquarium:flower_hibiscus"
     ],
     [
       "minecraft:freeze_top_layer"

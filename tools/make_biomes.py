@@ -117,4 +117,74 @@ write("biome", "outback", biome("savanna", [
     V + "glow_lichen", V + "patch_grass_savanna", V + "patch_dead_bush_2",
     V + "brown_mushroom_normal", V + "red_mushroom_normal"],
     2.0, 0.0, grass=0xBFA35A, foliage=0xAE9A4E, precipitation=False))
+# ------------------------------------------------------------------ trees: palm and eucalyptus
+def leaves_state(name):
+    return {"type": "minecraft:simple_state_provider", "state": {"Name": name, "Properties": {"distance": "7", "persistent": "false", "waterlogged": "false"}}}
+
+
+def log_state(name):
+    return {"type": "minecraft:simple_state_provider", "state": {"Name": name, "Properties": {"axis": "y"}}}
+
+
+# palm: a tall bare trunk with a drooping crown of fronds (cherry-style hanging leaves), growing on sand
+write("configured_feature", "palm", {"type": "minecraft:tree", "config": {
+    "decorators": [], "dirt_provider": {"type": "minecraft:simple_state_provider", "state": {"Name": "minecraft:sand"}},
+    "foliage_placer": {"type": "minecraft:cherry_foliage_placer", "radius": 3, "offset": 0, "height": 2,
+                       "wide_bottom_layer_hole_chance": 0.6, "corner_hole_chance": 0.5,
+                       "hanging_leaves_chance": 0.55, "hanging_leaves_extension_chance": 0.4},
+    "foliage_provider": leaves_state("aquarium:palm_leaves"), "force_dirt": False, "ignore_vines": True,
+    "minimum_size": {"type": "minecraft:two_layers_feature_size", "limit": 1, "lower_size": 0, "upper_size": 2},
+    "trunk_placer": {"type": "minecraft:straight_trunk_placer", "base_height": 6, "height_rand_a": 3, "height_rand_b": 2},
+    "trunk_provider": log_state("aquarium:palm_log")}})
+# eucalyptus: tall, branching, with a thin open crown
+write("configured_feature", "eucalyptus", {"type": "minecraft:tree", "config": {
+    "decorators": [], "dirt_provider": {"type": "minecraft:simple_state_provider", "state": {"Name": "minecraft:dirt"}},
+    "foliage_placer": {"type": "minecraft:fancy_foliage_placer", "radius": 2, "offset": 3, "height": 3},
+    "foliage_provider": leaves_state("aquarium:eucalyptus_leaves"), "force_dirt": False, "ignore_vines": True,
+    "minimum_size": {"type": "minecraft:two_layers_feature_size", "limit": 0, "lower_size": 0, "min_clipped_height": 6, "upper_size": 0},
+    "trunk_placer": {"type": "minecraft:fancy_trunk_placer", "base_height": 8, "height_rand_a": 7, "height_rand_b": 0},
+    "trunk_provider": log_state("aquarium:eucalyptus_log")}})
+write("placed_feature", "palm_checked", checked("aquarium:palm", "aquarium:palm_sapling"))
+write("placed_feature", "eucalyptus_checked", checked("aquarium:eucalyptus", "aquarium:eucalyptus_sapling"))
+write("placed_feature", "trees_palm", placed("aquarium:palm", [(0, 3), (1, 2), (2, 1)], "aquarium:palm_sapling"))
+write("placed_feature", "trees_eucalyptus_forest", placed("aquarium:eucalyptus", [(5, 4), (7, 2)], "aquarium:eucalyptus_sapling"))
+write("placed_feature", "trees_eucalyptus_woodland", placed("aquarium:eucalyptus", [(0, 3), (1, 3), (2, 1)], "aquarium:eucalyptus_sapling"))
+
+
+# ------------------------------------------------------------------ flowers
+def flower_patch(name, chance, tries=48):
+    write("configured_feature", f"flower_{name}", {"type": "minecraft:flower", "config": {"tries": tries, "xz_spread": 6, "y_spread": 2,
+        "feature": {"feature": {"type": "minecraft:simple_block", "config": {"to_place": {"type": "minecraft:simple_state_provider",
+                                                                                          "state": {"Name": f"aquarium:{name}"}}}},
+                    "placement": [{"type": "minecraft:block_predicate_filter", "predicate": {"type": "minecraft:matching_blocks", "blocks": "minecraft:air"}}]}}})
+    write("placed_feature", f"flower_{name}", {"feature": f"aquarium:flower_{name}", "placement": [
+        {"type": "minecraft:rarity_filter", "chance": chance}, {"type": "minecraft:in_square"},
+        {"type": "minecraft:heightmap", "heightmap": "MOTION_BLOCKING"}, {"type": "minecraft:biome"}]})
+
+
+flower_patch("lavender", 3, 64)
+flower_patch("edelweiss", 6)
+flower_patch("lupine", 4, 64)
+flower_patch("hibiscus", 6)
+flower_patch("desert_pea", 5)
+F = "aquarium:flower_"
+
+# flowers go last in each biome's vegetation step (vanilla biomes get theirs appended in Aquarium.java), so the order never conflicts
+for name, flower in [("mediterranean_woodland", "lavender"), ("chaparral", "lavender"), ("tundra", "lupine"),
+                     ("subtropical_forest", "hibiscus"), ("outback", "desert_pea")]:
+    path = f"{OUT}/biome/{name}.json"
+    b = json.load(open(path))
+    if F + flower not in b["features"][9]:
+        b["features"][9].append(F + flower)
+    json.dump(b, open(path, "w"), indent=2)
+
+write("biome", "tropical_coast", biome("beach", [
+    V + "glow_lichen", "aquarium:trees_palm", V + "patch_grass_savanna", V + "brown_mushroom_normal", V + "red_mushroom_normal",
+    F + "hibiscus"], 0.95, 0.8, grass=0x6FBF4A, foliage=0x4FA82E))
+write("biome", "eucalyptus_forest", biome("forest", [
+    V + "glow_lichen", "aquarium:trees_eucalyptus_forest", V + "patch_grass_forest",
+    V + "brown_mushroom_normal", V + "red_mushroom_normal"], 0.9, 0.6, grass=0x9DB46A, foliage=0x7FA58F))
+write("biome", "eucalyptus_woodland", biome("savanna", [
+    V + "glow_lichen", V + "patch_tall_grass", "aquarium:trees_eucalyptus_woodland", V + "patch_grass_savanna",
+    V + "brown_mushroom_normal", V + "red_mushroom_normal", F + "desert_pea"], 1.5, 0.2, grass=0xB7B060, foliage=0x8FA48A))
 print("ok")

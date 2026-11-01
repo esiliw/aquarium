@@ -1,0 +1,13 @@
+{
+  "variants": {
+    "type=bottom": {
+      "model": "aquarium:block/eucalyptus_slab"
+    },
+    "type=double": {
+      "model": "aquarium:block/eucalyptus_planks"
+    },
+    "type=top": {
+      "model": "aquarium:block/eucalyptus_slab_top"
+    }
+  }
+}

@@ -1,0 +1,7 @@
+{
+  "parent": "minecraft:block/door_top_right",
+  "textures": {
+    "bottom": "aquarium:block/eucalyptus_door_bottom",
+    "top": "aquarium:block/eucalyptus_door_top"
+  }
+}

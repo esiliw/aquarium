@@ -1,0 +1,10 @@
+{
+  "replace": false,
+  "values": [
+    "aquarium:desert_pea",
+    "aquarium:edelweiss",
+    "aquarium:hibiscus",
+    "aquarium:lavender",
+    "aquarium:lupine"
+  ]
+}

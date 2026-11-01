@@ -17,7 +17,8 @@ public final class EarthBiomes {
     /** our own biome: a normal forest with spruce mixed in (data/aquarium/worldgen/biome/mixed_forest.json) */
     public static final ResourceKey<Biome> MIXED_FOREST = key("mixed_forest"), MEDITERRANEAN_WOODLAND = key("mediterranean_woodland"),
             CHAPARRAL = key("chaparral"), STEPPE = key("steppe"), COLD_DESERT = key("cold_desert"), TUNDRA = key("tundra"),
-            SUBTROPICAL_FOREST = key("subtropical_forest"), OUTBACK = key("outback");
+            SUBTROPICAL_FOREST = key("subtropical_forest"), OUTBACK = key("outback"),
+            TROPICAL_COAST = key("tropical_coast"), EUCALYPTUS_FOREST = key("eucalyptus_forest"), EUCALYPTUS_WOODLAND = key("eucalyptus_woodland");
 
     private static ResourceKey<Biome> key(String name) {
         return ResourceKey.create(net.minecraft.core.registries.Registries.BIOME, new net.minecraft.resources.ResourceLocation("aquarium", name));
@@ -32,7 +33,7 @@ public final class EarthBiomes {
             Biomes.WINDSWEPT_SAVANNA, Biomes.DESERT, Biomes.BADLANDS, Biomes.SWAMP, Biomes.MANGROVE_SWAMP, Biomes.MEADOW,
             Biomes.GROVE, Biomes.SNOWY_SLOPES, Biomes.FROZEN_PEAKS, Biomes.JAGGED_PEAKS, Biomes.STONY_PEAKS, Biomes.ICE_SPIKES,
             Biomes.WINDSWEPT_HILLS, Biomes.WINDSWEPT_FOREST, Biomes.STONY_SHORE,
-            MIXED_FOREST, MEDITERRANEAN_WOODLAND, CHAPARRAL, STEPPE, COLD_DESERT, TUNDRA, SUBTROPICAL_FOREST, OUTBACK);
+            MIXED_FOREST, MEDITERRANEAN_WOODLAND, CHAPARRAL, STEPPE, COLD_DESERT, TUNDRA, SUBTROPICAL_FOREST, OUTBACK, TROPICAL_COAST, EUCALYPTUS_FOREST, EUCALYPTUS_WOODLAND);
 
     private EarthBiomes() {
     }
@@ -94,6 +95,11 @@ public final class EarthBiomes {
                 || (lat > -11 && lat <= 24 && lon > 92 && lon < 141);   // Southeast Asia
     }
 
+    /** Australia and Tasmania */
+    public static boolean australia(double lat, double lon) {
+        return lat < -10 && lat > -44 && lon > 112 && lon < 154;
+    }
+
     /** mainland Australia's interior, where deserts are red */
     public static boolean outback(double lat, double lon) {
         return lat < -17 && lat > -35 && lon > 114 && lon < 151;
@@ -141,6 +147,13 @@ public final class EarthBiomes {
                 || cover == Cover.VEGETATION_WITH_CROPLAND || cover == Cover.URBAN;
         boolean bare = cover.isBare();
         if (cover == Cover.LICHENS_AND_MOSSES) return TUNDRA;
+
+        // Australia's forests and woodlands are eucalypts (the tropical rainforest stays jungle, the red centre treeless)
+        if (trees && australia(lat, lon) && climate != Climate.Af && climate != Climate.Am && climate != Climate.BWh)
+            return Climate.temperate(climate) && !Climate.mediterranean(climate) ? EUCALYPTUS_FOREST : EUCALYPTUS_WOODLAND;
+        // palm-lined tropical coasts: open ground just above the sea
+        boolean palmClimate = Climate.tropical(climate) || Climate.humidSubtropical(climate) && alat < 30;
+        if (palmClimate && elevation < 5 && !trees && !farm && cover != Cover.URBAN) return TROPICAL_COAST;
 
         if (Climate.tropical(climate)) {
             if (trees) return climate == Climate.Aw ? Biomes.SPARSE_JUNGLE : Biomes.JUNGLE;

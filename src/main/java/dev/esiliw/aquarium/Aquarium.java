@@ -34,6 +34,12 @@ public class Aquarium implements ModInitializer {
     /** downloads and geocoding run here so world generation threads aren't all stuck on the network */
     public static final java.util.concurrent.ExecutorService IO_EXECUTOR = dev.esiliw.aquarium.data.DataEnv.IO_EXECUTOR;
 
+    @SafeVarargs
+    private static void addFlower(String name, net.minecraft.resources.ResourceKey<net.minecraft.world.level.biome.Biome>... biomes) {
+        BiomeModifications.addFeature(BiomeSelectors.includeByKey(biomes), GenerationStep.Decoration.VEGETAL_DECORATION,
+                net.minecraft.resources.ResourceKey.create(net.minecraft.core.registries.Registries.PLACED_FEATURE, new ResourceLocation(ID, "flower_" + name)));
+    }
+
     @Override
     public void onInitialize() {
         dev.esiliw.aquarium.block.AquariumBlocks.init();   // blocks first: the generator uses them
@@ -48,6 +54,10 @@ public class Aquarium implements ModInitializer {
                     ctx.getGenerationSettings().removeFeature(GenerationStep.Decoration.LAKES, MiscOverworldPlacements.LAKE_LAVA_SURFACE);
                     ctx.getGenerationSettings().removeFeature(GenerationStep.Decoration.LAKES, MiscOverworldPlacements.LAKE_LAVA_UNDERGROUND);
                 });
+        // Aquarium's flowers in vanilla biomes (appended last, the same way everywhere, so feature order never conflicts)
+        addFlower("edelweiss", net.minecraft.world.level.biome.Biomes.MEADOW, net.minecraft.world.level.biome.Biomes.WINDSWEPT_HILLS);
+        addFlower("lupine", net.minecraft.world.level.biome.Biomes.TAIGA);
+        addFlower("hibiscus", net.minecraft.world.level.biome.Biomes.JUNGLE, net.minecraft.world.level.biome.Biomes.SPARSE_JUNGLE);
         LOGGER.info("Aquarium {} loaded - Earth data from the Terrarium geo3 server", VERSION);
     }
 }

@@ -73,7 +73,8 @@
       "aquarium:tundra_bushes",
       "minecraft:patch_grass_badlands",
       "minecraft:brown_mushroom_normal",
-      "minecraft:red_mushroom_normal"
+      "minecraft:red_mushroom_normal",
+      "aquarium:flower_lupine"
     ],
     [
       "minecraft:freeze_top_layer"

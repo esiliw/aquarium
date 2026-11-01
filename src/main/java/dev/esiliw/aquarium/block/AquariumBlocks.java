@@ -35,6 +35,28 @@ public final class AquariumBlocks {
     public static final Item RICE_BOWL = item("rice_bowl", new BowlFoodItem(new Item.Properties().stacksTo(1)
             .food(new FoodProperties.Builder().nutrition(6).saturationMod(0.6f).build())));
 
+    // flowers: one or two per continent, each for the biomes where it grows
+    public static final Block LAVENDER = flower("lavender", net.minecraft.world.effect.MobEffects.REGENERATION, 8, false);
+    public static final Block EDELWEISS = flower("edelweiss", net.minecraft.world.effect.MobEffects.JUMP, 6, false);
+    public static final Block LUPINE = flower("lupine", net.minecraft.world.effect.MobEffects.NIGHT_VISION, 5, false);
+    public static final Block HIBISCUS = flower("hibiscus", net.minecraft.world.effect.MobEffects.SATURATION, 7, false);
+    public static final Block DESERT_PEA = flower("desert_pea", net.minecraft.world.effect.MobEffects.FIRE_RESISTANCE, 4, true);
+    public static final java.util.List<Block> FLOWERS = java.util.List.of(LAVENDER, EDELWEISS, LUPINE, HIBISCUS, DESERT_PEA);
+
+    private static Block flower(String name, net.minecraft.world.effect.MobEffect effect, int seconds, boolean onSand) {
+        BlockBehaviour.Properties p = BlockBehaviour.Properties.copy(net.minecraft.world.level.block.Blocks.POPPY);
+        Block b = onSand ? new net.minecraft.world.level.block.FlowerBlock(effect, seconds, p) {
+            @Override
+            protected boolean mayPlaceOn(net.minecraft.world.level.block.state.BlockState state, net.minecraft.world.level.BlockGetter level, net.minecraft.core.BlockPos pos) {
+                return super.mayPlaceOn(state, level, pos) || state.is(net.minecraft.tags.BlockTags.SAND);   // Outback red sand
+            }
+        } : new net.minecraft.world.level.block.FlowerBlock(effect, seconds, p);
+        block(name, b);
+        item(name, new BlockItem(b, new Item.Properties()));
+        block("potted_" + name, new net.minecraft.world.level.block.FlowerPotBlock(b, BlockBehaviour.Properties.copy(net.minecraft.world.level.block.Blocks.POTTED_POPPY)));
+        return b;
+    }
+
     private AquariumBlocks() {
     }
 
@@ -55,7 +77,11 @@ public final class AquariumBlocks {
             e.accept(BLACK_SAND_ITEM);
             e.accept(SALT_CRUST_ITEM);
             e.accept(RICE_ITEM);
+            for (Block f : FLOWERS) e.accept(f);
         });
+        for (Block f : FLOWERS) net.fabricmc.fabric.api.registry.CompostingChanceRegistry.INSTANCE.add(f.asItem(), 0.65f);
+        net.fabricmc.fabric.api.registry.CompostingChanceRegistry.INSTANCE.add(RICE_ITEM, 0.3f);
+        AquariumWood.init();
         ItemGroupEvents.modifyEntriesEvent(CreativeModeTabs.FOOD_AND_DRINKS).register(e -> e.accept(RICE_BOWL));
     }
 }
