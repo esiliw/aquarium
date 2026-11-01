@@ -12,6 +12,10 @@ import java.util.List;
  * grass and mobs generate. Climate data can refine this later.)
  */
 public final class EarthBiomes {
+    /** our own biome: a normal forest with spruce mixed in (data/aquarium/worldgen/biome/mixed_forest.json) */
+    public static final ResourceKey<Biome> MIXED_FOREST = ResourceKey.create(net.minecraft.core.registries.Registries.BIOME,
+            new net.minecraft.resources.ResourceLocation("aquarium", "mixed_forest"));
+
     public static final List<ResourceKey<Biome>> ALL = List.of(
             Biomes.OCEAN, Biomes.DEEP_OCEAN, Biomes.FROZEN_OCEAN, Biomes.DEEP_FROZEN_OCEAN, Biomes.COLD_OCEAN, Biomes.DEEP_COLD_OCEAN,
             Biomes.LUKEWARM_OCEAN, Biomes.DEEP_LUKEWARM_OCEAN, Biomes.WARM_OCEAN, Biomes.RIVER, Biomes.FROZEN_RIVER, Biomes.BEACH,
@@ -20,7 +24,7 @@ public final class EarthBiomes {
             Biomes.OLD_GROWTH_PINE_TAIGA, Biomes.JUNGLE, Biomes.SPARSE_JUNGLE, Biomes.SAVANNA, Biomes.SAVANNA_PLATEAU,
             Biomes.WINDSWEPT_SAVANNA, Biomes.DESERT, Biomes.BADLANDS, Biomes.SWAMP, Biomes.MANGROVE_SWAMP, Biomes.MEADOW,
             Biomes.GROVE, Biomes.SNOWY_SLOPES, Biomes.FROZEN_PEAKS, Biomes.JAGGED_PEAKS, Biomes.STONY_PEAKS, Biomes.ICE_SPIKES,
-            Biomes.WINDSWEPT_HILLS, Biomes.WINDSWEPT_FOREST, Biomes.STONY_SHORE);
+            Biomes.WINDSWEPT_HILLS, Biomes.WINDSWEPT_FOREST, Biomes.STONY_SHORE, MIXED_FOREST);
 
     private EarthBiomes() {
     }
@@ -55,7 +59,7 @@ public final class EarthBiomes {
             case NEEDLEAF_EVERGREEN, NEEDLEAF_EVERGREEN_OPEN -> cold > 58 ? Biomes.SNOWY_TAIGA : Biomes.TAIGA;
             case NEEDLEAF_EVERGREEN_CLOSED -> cold > 58 ? Biomes.SNOWY_TAIGA : Biomes.OLD_GROWTH_SPRUCE_TAIGA;
             case NEEDLEAF_DECIDUOUS, NEEDLEAF_DECIDUOUS_CLOSED, NEEDLEAF_DECIDUOUS_OPEN -> cold > 58 ? Biomes.SNOWY_TAIGA : Biomes.OLD_GROWTH_PINE_TAIGA;
-            case MIXED_LEAF_TYPE -> cold > 58 ? Biomes.TAIGA : Biomes.FOREST;      // no dark forest anywhere
+            case MIXED_LEAF_TYPE -> cold > 58 ? Biomes.TAIGA : cold > 47 ? MIXED_FOREST : Biomes.FOREST;   // no dark forest anywhere
             case TREE_AND_SHRUB_WITH_HERBACEOUS_COVER, TREE_OR_SHRUB_COVER -> tropical ? Biomes.SPARSE_JUNGLE : (cold > 55 ? Biomes.TAIGA : Biomes.FOREST);
             case HERBACEOUS_COVER_WITH_TREE_AND_SHRUB -> tropical ? Biomes.SAVANNA : Biomes.MEADOW;
             case SHRUBLAND, SHRUBLAND_EVERGREEN, SHRUBLAND_DECIDUOUS -> alat < 38 ? Biomes.SAVANNA : (cold > 60 ? Biomes.SNOWY_PLAINS : Biomes.WINDSWEPT_SAVANNA);
