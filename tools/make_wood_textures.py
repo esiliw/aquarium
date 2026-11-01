@@ -45,28 +45,44 @@ def bark(w, p):
     r = random.Random(sum(map(ord, w)))
     im = new()
     if w == "palm":
-        # the stubs of old leaf bases in a diagonal lattice, like a pineapple: each stub light on top, shaded below
-        groove, shade, mid, top = "#6a543c", "#a48a63", ["#c9b08a", "#bfa57e", "#cdb592"], "#e2cfab"
-        for y in range(16):
-            for x in range(16):
-                a, b = (x + y) % 8, (x - y) % 8
-                if a == 0 or b == 0:
-                    c = groove
-                else:
-                    # a counts up from the top-left edge, 8-b up from the top-right edge: near both = top of the stub
-                    up = min(a, 8 - b)
-                    down = min(8 - a, b)
-                    stub = ((x + y) // 8 * 3 + (x - y) // 8 * 5) % 3          # which stub: each gets its own tint
-                    tone = [["#c9b08a", "#cdb592"], ["#bfa57e", "#c4ab84"], ["#d2bb96", "#c9b08a"]][stub]
-                    if up <= 1:
-                        c = top
-                    elif down <= 1 or down == 2 and r.random() < .5:
-                        c = shade
-                    else:
-                        c = pick(r, tone)
-                        if (x * 7 + stub) % 5 == 0 and r.random() < .6:
-                            c = shade                               # little vertical cracks
-                im.putpixel((x, y), hexc(c))
+        # the stubs of old leaf bases: irregular rows of stubs of different sizes, each lit on top, tapering into
+        # a dark gap below, the next row staggered over the gaps (tileable both ways)
+        groove, deep, shade, top = "#6a543c", "#56442f", "#a48a63", "#e0cda9"
+        tones = [["#c9b08a", "#cdb592"], ["#bfa57e", "#c4ab84"], ["#d2bb96", "#c9b08a"], ["#b9a07a", "#c2a982"]]
+        rng = random.Random(77)
+        heights = [5, 4, 3, 4]
+        y0 = 0
+        cells = {}
+        for row, h in enumerate(heights):
+            widths = []
+            while sum(widths) < 16:
+                widths.append(rng.choice([3, 4, 5, 5, 6]))
+            widths[-1] -= sum(widths) - 16
+            if widths[-1] < 3:
+                widths[-2] += widths.pop()
+            x0 = rng.randrange(16)
+            for wdt in widths:
+                tone = rng.choice(tones)
+                for dy in range(h):
+                    for dx in range(wdt):
+                        cells[((x0 + dx) % 16, y0 + dy)] = (dx, dy, wdt, h, tone)
+                x0 += wdt
+            y0 += h
+        for (x, y), (dx, dy, wdt, h, tone) in cells.items():
+            taper = dy >= h - 2 and (dx == 0 or dx == wdt - 1)     # stubs narrow towards the bottom
+            if dx == 0 and dy < h - 1:
+                c = groove
+            elif dy == h - 1:
+                c = deep if (dx == 0 or dx == wdt - 1) else shade
+            elif taper:
+                c = deep
+            elif dy == 0:
+                c = top
+            else:
+                c = pick(r, tone)
+                if dx == wdt // 2 and dy == h - 2 and r.random() < .7:
+                    c = shade                                       # a split in the stub
+            im.putpixel((x, y), hexc(c))
     else:
         # pale smooth gum bark with long vertical streaks where it peels, a few rainbow tints
         base = ["#e3dccb", "#d9d2c0", "#cfcbc0", "#e8e2d3"]
