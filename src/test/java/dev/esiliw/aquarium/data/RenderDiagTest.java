@@ -81,8 +81,8 @@ public class RenderDiagTest {
                     else rgb = mix(0x9ff0e0, 0x0a6a5a, t);
                     if (c.waterTop() != 62) rgb = mix(rgb, 0xff00ff, 0.35);   // water surface not at sea level
                 } else if (c.buildingTop() > c.top()) {
-                    int h = c.buildingTop() - c.top();
-                    rgb = mix(0xc8c0b8, 0x504840, Math.min(1, h / 20.0));      // buildings: darker = taller
+                    int bh = c.buildingTop() - c.top();
+                    rgb = mix(0xc8c0b8, 0x504840, Math.min(1, bh / 20.0));      // buildings: darker = taller
                 } else if (c.way() != OsmWays.NONE) {
                     rgb = switch (c.way()) {
                         case OsmWays.MAJOR -> 0x202020;
