@@ -332,10 +332,10 @@ def flowers():
 
 
 def palm_door_full():
-    """beach hut: bleached driftwood, louvred top half, faded turquoise frame"""
+    """beach hut: bleached driftwood, louvred top half, darker weathered palm-wood frame"""
     r = random.Random(41)
     im = Image.new("RGBA", (16, 32), (0, 0, 0, 0))
-    frame, frame_d = ["#6fb3ac", "#62a39c", "#7cbfb8"], "#4d8a84"
+    frame, frame_d = ["#9a815c", "#8c7350", "#a68d66"], "#6e5a3e"
     drift, drift_d, gap = ["#ddd0b0", "#d2c3a1", "#e6dcc0"], "#b9a888", "#7d6c52"
     for y in range(32):
         for x in range(16):
@@ -391,13 +391,13 @@ def euc_door_full():
 
 
 def palm_trapdoor():
-    """boardwalk slats with gaps, turquoise rim"""
+    """boardwalk slats with gaps, darker rim"""
     r = random.Random(43)
     im = new()
     for y in range(16):
         for x in range(16):
             if x in (0, 15) or y in (0, 15):
-                c = pick(r, ["#6fb3ac", "#62a39c"])
+                c = pick(r, ["#9a815c", "#8c7350"])
             elif y % 3 == 0:
                 continue                                           # gaps between the slats
             else:
