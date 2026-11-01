@@ -21,5 +21,10 @@
   "biome.aquarium.cold_desert": "Cold Desert",
   "biome.aquarium.tundra": "Tundra",
   "biome.aquarium.subtropical_forest": "Subtropical Forest",
-  "biome.aquarium.outback": "Outback"
+  "biome.aquarium.outback": "Outback",
+  "block.aquarium.black_sand": "Black Sand",
+  "block.aquarium.salt_crust": "Salt Crust",
+  "block.aquarium.rice": "Rice",
+  "item.aquarium.rice": "Rice",
+  "item.aquarium.rice_bowl": "Bowl of Rice"
 }

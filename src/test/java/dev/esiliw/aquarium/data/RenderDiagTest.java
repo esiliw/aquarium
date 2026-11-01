@@ -141,6 +141,13 @@ public class RenderDiagTest {
                 int rgb = c.lake() ? 0x4080ff : biomeColor(b);
                 bio.setRGB(i, j, rgb);
                 legend.merge(b, 1, Integer::sum);
+                dev.esiliw.aquarium.world.Cover cv = c.cover();
+                boolean crop = cv == dev.esiliw.aquarium.world.Cover.RAINFED_CROPLAND || cv == dev.esiliw.aquarium.world.Cover.IRRIGATED_CROPLAND
+                        || cv == dev.esiliw.aquarium.world.Cover.CROPLAND_WITH_VEGETATION;
+                if (crop && c.waterTop() == Integer.MIN_VALUE && c.elevation() < 1500 && dev.esiliw.aquarium.world.EarthBiomes.riceRegion(lat, lon, c.climate()))
+                    legend.merge("~paddy", 1, Integer::sum);
+                if (dev.esiliw.aquarium.world.EarthBiomes.saltFlat(lat, lon) && (cv.isBare() || cv == dev.esiliw.aquarium.world.Cover.SPARSE_VEGETATION))
+                    legend.merge("~salt", 1, Integer::sum);
             }
         }
         ImageIO.write(bio, "png", new File(out, p.name + "_biomes.png"));

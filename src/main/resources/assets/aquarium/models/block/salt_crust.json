@@ -1,0 +1,8 @@
+{
+  "parent": "minecraft:block/cube_bottom_top",
+  "textures": {
+    "top": "aquarium:block/salt_crust_top",
+    "bottom": "aquarium:block/salt_crust",
+    "side": "aquarium:block/salt_crust"
+  }
+}

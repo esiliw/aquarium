@@ -36,6 +36,7 @@ public class Aquarium implements ModInitializer {
 
     @Override
     public void onInitialize() {
+        dev.esiliw.aquarium.block.AquariumBlocks.init();   // blocks first: the generator uses them
         Registry.register(BuiltInRegistries.CHUNK_GENERATOR, new ResourceLocation(ID, "earth"), EarthChunkGenerator.CODEC);
         Registry.register(BuiltInRegistries.BIOME_SOURCE, new ResourceLocation(ID, "earth"), EarthBiomeSource.CODEC);
         CommandRegistrationCallback.EVENT.register((dispatcher, registryAccess, environment) -> GeoCommands.register(dispatcher));

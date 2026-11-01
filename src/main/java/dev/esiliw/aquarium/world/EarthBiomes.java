@@ -62,6 +62,38 @@ public final class EarthBiomes {
         return false;
     }
 
+    /** salt flats and salt pans: bare flat ground here is white salt crust */
+    private static final double[][] SALT = {
+            {-20.75, -19.85, -68.35, -66.85},   // Salar de Uyuni
+            {-19.6, -19.1, -68.45, -67.9},      // Salar de Coipasa
+            {-23.9, -23.0, -68.45, -68.0},      // Salar de Atacama
+            {-30.2, -29.4, -65.3, -64.4},       // Salinas Grandes
+            {40.6, 41.1, -114.0, -113.3},       // Bonneville Salt Flats
+            {36.0, 36.4, -116.95, -116.75},     // Badwater Basin, Death Valley
+            {-19.05, -18.5, 15.85, 16.75},      // Etosha Pan
+            {-21.1, -20.2, 24.9, 26.4},         // Makgadikgadi Pans
+            {33.4, 34.2, 7.5, 9.1},             // Chott el Djerid
+            {-29.6, -27.7, 136.7, 138.0},       // Kati Thanda / Lake Eyre
+            {-31.6, -29.9, 137.4, 138.2},       // Lake Torrens
+            {34.3, 35.3, 52.5, 55.0},           // Dasht-e Kavir
+            {23.4, 24.5, 68.7, 71.2},           // Rann of Kutch
+            {36.6, 37.2, 94.5, 96.0},           // Qarhan, Qaidam Basin
+    };
+
+    public static boolean saltFlat(double lat, double lon) {
+        for (double[] b : SALT) if (lat >= b[0] && lat <= b[1] && lon >= b[2] && lon <= b[3]) return true;
+        return false;
+    }
+
+    /** monsoon Asia, where farmland in warm wet climates is flooded rice paddies */
+    public static boolean riceRegion(double lat, double lon, byte climate) {
+        boolean warmWet = Climate.tropical(climate) || climate == Climate.Cfa || climate == Climate.Cwa || climate == Climate.Cwb;
+        if (!warmWet) return false;
+        return (lat > 18 && lat < 42 && lon > 98 && lon < 146)         // China, Korea, Japan
+                || (lat > 5 && lat < 31 && lon > 67 && lon < 98)        // South Asia
+                || (lat > -11 && lat <= 24 && lon > 92 && lon < 141);   // Southeast Asia
+    }
+
     /** mainland Australia's interior, where deserts are red */
     public static boolean outback(double lat, double lon) {
         return lat < -17 && lat > -35 && lon > 114 && lon < 151;

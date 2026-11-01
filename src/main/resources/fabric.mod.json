@@ -18,6 +18,9 @@
 	"entrypoints": {
 		"main": [
 			"dev.esiliw.aquarium.Aquarium"
+		],
+		"client": [
+			"dev.esiliw.aquarium.client.AquariumClient"
 		]
 	},
 	"depends": {

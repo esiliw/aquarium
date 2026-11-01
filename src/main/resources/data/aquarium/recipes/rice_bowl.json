@@ -1,0 +1,21 @@
+{
+  "type": "minecraft:crafting_shapeless",
+  "category": "misc",
+  "ingredients": [
+    {
+      "item": "minecraft:bowl"
+    },
+    {
+      "item": "aquarium:rice"
+    },
+    {
+      "item": "aquarium:rice"
+    },
+    {
+      "item": "aquarium:rice"
+    }
+  ],
+  "result": {
+    "item": "aquarium:rice_bowl"
+  }
+}

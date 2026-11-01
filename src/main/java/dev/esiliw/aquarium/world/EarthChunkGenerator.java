@@ -72,7 +72,13 @@ public class EarthChunkGenerator extends ChunkGenerator {
     private static final BlockState RED_SANDSTONE = Blocks.RED_SANDSTONE.defaultBlockState();
     private static final BlockState BASALT = Blocks.BASALT.defaultBlockState();
     private static final BlockState BLACKSTONE = Blocks.BLACKSTONE.defaultBlockState();
-    private static final BlockState BLACK_SAND = Blocks.BLACK_CONCRETE_POWDER.defaultBlockState();
+    private static final BlockState BLACK_SAND = dev.esiliw.aquarium.block.AquariumBlocks.BLACK_SAND.defaultBlockState();
+    private static final BlockState SALT = dev.esiliw.aquarium.block.AquariumBlocks.SALT_CRUST.defaultBlockState();
+    private static final BlockState RICE_LOWER = dev.esiliw.aquarium.block.AquariumBlocks.RICE.defaultBlockState();
+    private static final BlockState RICE_UPPER = RICE_LOWER.setValue(net.minecraft.world.level.block.DoublePlantBlock.HALF,
+            net.minecraft.world.level.block.state.properties.DoubleBlockHalf.UPPER);
+    /** rice paddies: fields of PADDY_X x PADDY_Z blocks, each a flat flooded basin inside a one-block earth bank */
+    private static final int PADDY_X = 12, PADDY_Z = 8;
 
     public final EarthSettings settings;
     private final GeoProjection projection;
@@ -146,6 +152,21 @@ public class EarthChunkGenerator extends ChunkGenerator {
                 cols[(dx + 1) + (dz + 1) * 18] = this.column(x0 + dx, z0 + dz);
             }
         }
+        // rice paddies: 0 = none, 1 = bank, 2 = flooded basin; level = the field's ground y
+        byte[] paddy = new byte[18 * 18];
+        int[] paddyLevel = new int[18 * 18];
+        java.util.Map<Long, Integer> fieldLevels = new java.util.HashMap<>();
+        for (int dz = -1; dz <= 16; dz++) {
+            for (int dx = -1; dx <= 16; dx++) {
+                int k = (dx + 1) + (dz + 1) * 18;
+                int x = x0 + dx, z = z0 + dz;
+                if (!this.paddyGround(cols[k], x)) continue;
+                int level = this.fieldLevel(x, z, fieldLevels);
+                if (Math.abs(cols[k].top() - level) > 2) continue;      // too steep for this field
+                paddy[k] = (byte) (Math.floorMod(x, PADDY_X) == 0 || Math.floorMod(z, PADDY_Z) == 0 ? 1 : 2);
+                paddyLevel[k] = level;
+            }
+        }
         int sea = this.settings.seaLevel();
         int minY = Math.max(chunk.getMinBuildHeight(), this.settings.minY());
         int maxY = Math.min(chunk.getMaxBuildHeight() - 1, this.settings.maxY());
@@ -155,11 +176,15 @@ public class EarthChunkGenerator extends ChunkGenerator {
                 int i = (lx + 1) + (lz + 1) * 18;
                 TerrainModel.Column c = cols[i];
                 int top = Math.max(c.top(), minY + 1);   // never a hole down to the void, whatever the data says
-                if (c.waterTop() == Integer.MIN_VALUE) {
-                    // banks hold the water in: never lower than a neighbouring lake or river surface
+                byte kind = paddy[i];
+                if (kind == 2) top = paddyLevel[i];
+                else if (kind == 1) top = paddyLevel[i] + 1;
+                if (c.waterTop() == Integer.MIN_VALUE && kind != 2) {
+                    // banks hold the water in: never lower than a neighbouring lake, river or paddy surface
                     for (int nb : new int[]{i - 1, i + 1, i - 18, i + 18}) {
                         TerrainModel.Column n = cols[nb];
                         if (n.lake() && n.waterTop() > top) top = n.waterTop();
+                        if (paddy[nb] == 2 && paddyLevel[nb] + 1 > top) top = paddyLevel[nb] + 1;
                     }
                 }
                 int slope = Math.max(Math.abs(cols[i - 1].top() - cols[i + 1].top()), Math.abs(cols[i - 18].top() - cols[i + 18].top()));
@@ -168,7 +193,13 @@ public class EarthChunkGenerator extends ChunkGenerator {
                 boolean underwater = c.waterTop() != Integer.MIN_VALUE && top < c.waterTop();
 
                 BlockState surface, under;
-                if (!underwater && c.way() != dev.esiliw.aquarium.data.OsmWays.NONE) {
+                if (kind == 2) {
+                    surface = MUD;
+                    under = DIRT;
+                } else if (kind == 1) {
+                    surface = GRASS;
+                    under = DIRT;
+                } else if (!underwater && c.way() != dev.esiliw.aquarium.data.OsmWays.NONE) {
                     surface = switch (c.way()) {
                         case dev.esiliw.aquarium.data.OsmWays.MAJOR -> ROAD_MAJOR;
                         case dev.esiliw.aquarium.data.OsmWays.SECONDARY -> ROAD_SECONDARY;
@@ -196,6 +227,7 @@ public class EarthChunkGenerator extends ChunkGenerator {
                     else if (surface == SAND) under = SANDSTONE;
                     else if (surface == RED_SAND) under = RED_SANDSTONE;
                     else if (surface == BASALT || surface == BLACKSTONE || surface == BLACK_SAND) under = BLACKSTONE;
+                    else if (surface == SALT) under = SALT;
                     else if (surface == STONE) under = STONE;
                     else under = DIRT;
                 } else if (cover == Cover.PERMANENT_SNOW) {
@@ -230,10 +262,37 @@ public class EarthChunkGenerator extends ChunkGenerator {
                     for (int y = Math.max(top + 1, minY); y <= Math.min(c.waterTop(), maxY); y++) setBlock(chunk, lx, y, lz, WATER);
                 } else if (c.buildingTop() > top) {
                     for (int y = Math.max(top + 1, minY); y <= Math.min(c.buildingTop(), maxY); y++) setBlock(chunk, lx, y, lz, BUILDING);
+                } else if (kind == 2 && top + 2 <= maxY) {
+                    // one block of water with rice standing in it; each field planted at its own stage, a few left fallow
+                    int x = x0 + lx, z = z0 + lz;
+                    int h = (int) (net.minecraft.util.Mth.getSeed(Math.floorDiv(x, PADDY_X), 0, Math.floorDiv(z, PADDY_Z)) >>> 33);
+                    if (Math.floorMod(h, 8) == 0) {
+                        setBlock(chunk, lx, top + 1, lz, WATER);
+                    } else {
+                        int age = 3 + Math.floorMod(h >> 4, 5);
+                        setBlock(chunk, lx, top + 1, lz, RICE_LOWER.setValue(dev.esiliw.aquarium.block.RiceBlock.AGE, age));
+                        setBlock(chunk, lx, top + 2, lz, RICE_UPPER.setValue(dev.esiliw.aquarium.block.RiceBlock.AGE, age));
+                    }
                 }
             }
         }
         Heightmap.primeHeightmaps(chunk, EnumSet.of(Heightmap.Types.OCEAN_FLOOR_WG, Heightmap.Types.WORLD_SURFACE_WG));
+    }
+
+    /** farmland in monsoon Asia's warm wet climates, low enough and clear of roads, buildings and water */
+    private boolean paddyGround(TerrainModel.Column c, int x) {
+        Cover cover = c.cover();
+        if (cover != Cover.RAINFED_CROPLAND && cover != Cover.IRRIGATED_CROPLAND && cover != Cover.CROPLAND_WITH_VEGETATION) return false;
+        if (c.waterTop() != Integer.MIN_VALUE || c.way() != dev.esiliw.aquarium.data.OsmWays.NONE || c.buildingTop() > c.top()) return false;
+        if (c.elevation() > 1500) return false;
+        return EarthBiomes.riceRegion(c.lat(), this.projection.lon(x + 0.5), c.climate());
+    }
+
+    /** ground y of the paddy field containing (x, z): the height at the field's centre, so every chunk agrees */
+    private int fieldLevel(int x, int z, java.util.Map<Long, Integer> cache) {
+        int fx = Math.floorDiv(x, PADDY_X), fz = Math.floorDiv(z, PADDY_Z);
+        long key = ((long) fx << 32) ^ (fz & 0xffffffffL);
+        return cache.computeIfAbsent(key, k -> this.column(fx * PADDY_X + PADDY_X / 2, fz * PADDY_Z + PADDY_Z / 2).top());
     }
 
     /** climate-specific ground: cold-desert gravel, dry grass patches, tundra moss, rock instead of sand in wet climates */
@@ -249,6 +308,8 @@ public class EarthChunkGenerator extends ChunkGenerator {
             if (beach && (cover.isBare() || cover == Cover.SPARSE_VEGETATION || cover == Cover.NO)) return BLACK_SAND;
             if (cover.isBare() || cover == Cover.SPARSE_VEGETATION) return n > 0.2 ? BASALT : BLACKSTONE;
         }
+        if (EarthBiomes.saltFlat(c.lat(), this.projection.lon(x + 0.5)) && !forest
+                && (cover.isBare() || cover == Cover.SPARSE_VEGETATION || cover == Cover.NO || cover == Cover.SPARSE_HERBACEOUS_COVER)) return SALT;
         if (beach) return null;                                                                   // beaches stay sand
         if ((k == dev.esiliw.aquarium.data.Climate.BWh || k == dev.esiliw.aquarium.data.Climate.BSh) && !forest
                 && EarthBiomes.outback(c.lat(), this.projection.lon(x + 0.5))) {
