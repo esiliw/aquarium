@@ -331,16 +331,113 @@ def flowers():
         grid(rows, pal).save(f"{B}/{name}.png")
 
 
+def palm_door_full():
+    """beach hut: bleached driftwood, louvred top half, faded turquoise frame"""
+    r = random.Random(41)
+    im = Image.new("RGBA", (16, 32), (0, 0, 0, 0))
+    frame, frame_d = ["#6fb3ac", "#62a39c", "#7cbfb8"], "#4d8a84"
+    drift, drift_d, gap = ["#ddd0b0", "#d2c3a1", "#e6dcc0"], "#b9a888", "#7d6c52"
+    for y in range(32):
+        for x in range(16):
+            if x in (0, 15) or y in (0, 31) or y in (15, 16):
+                c = frame_d if (x == 15 or y == 31) else pick(r, frame)
+            elif x in (1, 14):
+                c = pick(r, frame)
+            elif y < 15:
+                c = gap if y % 2 == 0 else pick(r, drift)          # slanted louvres: slat, shadow, slat...
+                if y % 2 == 1 and x == 2:
+                    c = drift_d
+            else:
+                c = drift_d if x in (5, 10) else pick(r, drift)     # three vertical boards
+                if r.random() < .08:
+                    c = drift_d
+            im.putpixel((x, y), hexc(c))
+    for y in (19, 20):
+        im.putpixel((12, y), hexc("#8a6a42"))                      # rope pull
+    im.putpixel((11, 21), hexc("#8a6a42"))
+    return im
+
+
+def euc_door_full():
+    """solid framed gum-wood door with carved grooves, warm red-ochre"""
+    r = random.Random(42)
+    im = Image.new("RGBA", (16, 32), (0, 0, 0, 0))
+    p = WOOD["eucalyptus"]
+    deep, light = "#5e2f1c", "#c7845f"
+    for y in range(32):
+        for x in range(16):
+            c = pick(r, p["planks"], [5, 3, 2])
+            if x in (0, 15) or y in (0, 31):
+                c = p["seam"]
+            elif x in (1, 14) or y in (1, 30, 15, 16):
+                c = "#8e4d32"                                       # raised frame and middle rail
+            im.putpixel((x, y), hexc(c))
+    # carved grooves in each panel: an inset rectangle, light on the top-left edge, dark on the bottom-right
+    for (y0, y1) in ((3, 13), (18, 28)):
+        for x in range(3, 13):
+            im.putpixel((x, y0), hexc(deep))
+            im.putpixel((x, y1), hexc(light))
+        for y in range(y0, y1 + 1):
+            im.putpixel((3, y), hexc(deep))
+            im.putpixel((12, y), hexc(light))
+        # three vertical flutes inside
+        for x in (6, 9):
+            for y in range(y0 + 2, y1 - 1):
+                im.putpixel((x, y), hexc(deep))
+                im.putpixel((x + 1, y), hexc(light))
+    im.putpixel((12, 17), hexc("#d9b36a"))                         # brass knob
+    im.putpixel((12, 18), hexc("#a8833f"))
+    return im
+
+
+def palm_trapdoor():
+    """boardwalk slats with gaps, turquoise rim"""
+    r = random.Random(43)
+    im = new()
+    for y in range(16):
+        for x in range(16):
+            if x in (0, 15) or y in (0, 15):
+                c = pick(r, ["#6fb3ac", "#62a39c"])
+            elif y % 3 == 0:
+                continue                                           # gaps between the slats
+            else:
+                c = pick(r, ["#ddd0b0", "#d2c3a1", "#e6dcc0"])
+            im.putpixel((x, y), hexc(c))
+    return im
+
+
+def euc_trapdoor():
+    r = random.Random(44)
+    p = WOOD["eucalyptus"]
+    im = new()
+    deep, light = "#5e2f1c", "#c7845f"
+    for y in range(16):
+        for x in range(16):
+            c = p["seam"] if x in (0, 15) or y in (0, 15) else ("#8e4d32" if x in (1, 14) or y in (1, 14) else pick(r, p["planks"], [5, 3, 2]))
+            im.putpixel((x, y), hexc(c))
+    for k in range(3, 13):
+        im.putpixel((k, 3), hexc(deep)); im.putpixel((k, 12), hexc(light))
+        im.putpixel((3, k), hexc(deep)); im.putpixel((12, k), hexc(light))
+    for k in range(5, 11):
+        im.putpixel((k, 7), hexc(deep)); im.putpixel((k, 8), hexc(light))
+    return im
+
+
+DOORS = {"palm": (palm_door_full, palm_trapdoor), "eucalyptus": (euc_door_full, euc_trapdoor)}
+
 for w, p in WOOD.items():
     bark(w, p).save(f"{B}/{w}_log.png")
     log_top(w, p, False).save(f"{B}/{w}_log_top.png")
     stripped(w, p).save(f"{B}/stripped_{w}_log.png")
     log_top(w, p, True).save(f"{B}/stripped_{w}_log_top.png")
     planks(w, p).save(f"{B}/{w}_planks.png")
-    door(w, p, "top").save(f"{B}/{w}_door_top.png")
-    door(w, p, "bottom").save(f"{B}/{w}_door_bottom.png")
-    trapdoor(w, p).save(f"{B}/{w}_trapdoor.png")
-    door_item(w, p).save(f"{I}/{w}_door.png")
+    full = DOORS[w][0]()
+    full.crop((0, 0, 16, 16)).save(f"{B}/{w}_door_top.png")
+    full.crop((0, 16, 16, 32)).save(f"{B}/{w}_door_bottom.png")
+    DOORS[w][1]().save(f"{B}/{w}_trapdoor.png")
+    item = new()
+    item.alpha_composite(full.resize((8, 16), Image.NEAREST), (4, 0))
+    item.save(f"{I}/{w}_door.png")
     leaves(w).save(f"{B}/{w}_leaves.png")
 grid(PALM_SAPLING, {"g": "#5fa236", "G": "#3d7524", "t": "#8a7356"}).save(f"{B}/palm_sapling.png")
 grid(EUC_SAPLING, {"e": "#84ad99", "E": "#5f8a77", "s": "#c6ac9c"}).save(f"{B}/eucalyptus_sapling.png")
