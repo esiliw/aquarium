@@ -494,6 +494,19 @@ def coconut():
                 c = "#5e3f24"                                   # fibres
             im.putpixel((x, y), hexc(c))
     im.putpixel((7, 0), hexc("#5a7a2e"))
+    # top face (uv 10..16, 0..6): lit, the stalk joint in the middle
+    for y in range(6):
+        for x in range(6):
+            d = max(abs(x - 2.5), abs(y - 2.5))
+            c = pick(r, ["#a87a4c", "#9a6c42"]) if d < 2 else "#8a6038"
+            if d < .6:
+                c = "#7a5232"                                   # where the stalk joins
+            im.putpixel((10 + x, y), hexc(c))
+    # bottom face (uv 0..6, 10..16): in shadow
+    for y in range(6):
+        for x in range(6):
+            d = max(abs(x - 2.5), abs(y - 2.5))
+            im.putpixel((x, 10 + y), hexc(pick(r, ["#4f3320", "#4a2f1c"]) if d < 2 else "#3b2412"))
     im.save(f"{B}/coconut.png")
     # drawn like the vanilla apple: round body, darker outline in the same colour, lit from the top left
     item = grid([
