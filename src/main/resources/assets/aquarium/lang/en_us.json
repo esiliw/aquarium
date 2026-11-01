@@ -12,5 +12,6 @@
   "aquarium.customize.data": "Data",
   "aquarium.customize.data.open": "Open data (AWS, ESA, OSM)",
   "aquarium.customize.data.terrarium": "Terrarium server (gegy)",
-  "aquarium.customize.ways": "Road & rail guide (OSM, open data only)"
+  "aquarium.customize.ways": "Road & rail guide (OSM, open data only)",
+  "aquarium.customize.buildings": "Buildings as cobblestone boxes (OSM)"
 }

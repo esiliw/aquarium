@@ -26,9 +26,14 @@ public final class TerrainModel {
     /**
      * top = y of the highest solid block, waterTop = y of the highest water block (or MIN_VALUE).
      */
-    public record Column(int top, int waterTop, double elevation, Cover cover, boolean ocean, boolean lake, double lat, byte way) {
+    public record Column(int top, int waterTop, double elevation, Cover cover, boolean ocean, boolean lake, double lat, byte way, int buildingTop) {
         public Column(int top, int waterTop, double elevation, Cover cover, boolean ocean, boolean lake, double lat) {
-            this(top, waterTop, elevation, cover, ocean, lake, lat, dev.esiliw.aquarium.data.OsmWays.NONE);
+            this(top, waterTop, elevation, cover, ocean, lake, lat, dev.esiliw.aquarium.data.OsmWays.NONE, Integer.MIN_VALUE);
+        }
+
+        /** y of the highest non-air block: ground, water or building */
+        public int highest() {
+            return Math.max(this.top, Math.max(this.waterTop, this.buildingTop));
         }
     }
 
@@ -137,6 +142,13 @@ public final class TerrainModel {
         Cover cover = this.data.cover(lat, lon);
         if (cover == Cover.WATER) cover = Cover.NO;
         int top = this.surfaceY(Math.max(0.5, e + 0.35 * vs * dev.esiliw.aquarium.data.Noise.smooth(x / 9.0, z / 9.0, 31)));
-        return new Column(top, Integer.MIN_VALUE, e, cover, false, false, lat, w.way());
+        int buildingTop = Integer.MIN_VALUE;
+        if (!Double.isNaN(w.buildingBase())) {
+            // flat roof: ground at the building's centre + its height, in true proportion to the footprint
+            int floors = Math.max(1, (int) Math.round(w.buildingHeight() / this.projection.metersPerBlock(lat)));
+            int roof = this.surfaceY(Math.max(0.5, w.buildingBase())) + floors;
+            if (roof > top) buildingTop = roof;
+        }
+        return new Column(top, Integer.MIN_VALUE, e, cover, false, false, lat, w.way(), buildingTop);
     }
 }

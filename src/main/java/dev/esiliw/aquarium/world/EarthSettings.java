@@ -20,12 +20,13 @@ import dev.esiliw.aquarium.data.GeoProjection;
  *                      before this setting existed keep their layout)
  * @param osmSnapshot   OpenFreeMap planet snapshot the world is pinned to (so OSM edits never change it later)
  * @param osmWays       draw OSM roads, railways and stations on the ground as a building guide (open data only)
+ * @param osmBuildings  OSM buildings as solid cobblestone boxes with their footprint and height (open data only)
  * @param dataSource    "open" (AWS terrain tiles, ESA WorldCover, OpenStreetMap) or "terrarium" (gegy's server; the
  *                      default so older worlds keep generating the same way)
  */
 public record EarthSettings(double worldScale, double verticalScale, int heightOffset, int seaLevel, int minY, int height,
                             double spawnLat, double spawnLon, GeoProjection.Type projectionType,
-                            EarthData.Source dataSource, String osmSnapshot, boolean osmWays) {
+                            EarthData.Source dataSource, String osmSnapshot, boolean osmWays, boolean osmBuildings) {
     private static final Codec<EarthData.Source> SOURCE_CODEC = Codec.STRING.comapFlatMap(s -> {
         try {
             return com.mojang.serialization.DataResult.success(EarthData.Source.valueOf(s.toUpperCase(java.util.Locale.ROOT)));
@@ -48,7 +49,7 @@ public record EarthSettings(double worldScale, double verticalScale, int heightO
     /** the settings a new world starts from */
     public static EarthSettings defaults() {
         return new EarthSettings(10, autoVerticalScale(10), 0, 63, TALL_MIN_Y, TALL_HEIGHT, MALMO_LAT, MALMO_LON,
-                GeoProjection.Type.MERCATOR, EarthData.Source.OPEN, dev.esiliw.aquarium.data.OsmWater.DEFAULT_SNAPSHOT, true);
+                GeoProjection.Type.MERCATOR, EarthData.Source.OPEN, dev.esiliw.aquarium.data.OsmWater.DEFAULT_SNAPSHOT, true, true);
     }
 
     /** metres per block vertically when not set: like the horizontal scale, but at least 5 so Mount Everest fits */
@@ -68,7 +69,8 @@ public record EarthSettings(double worldScale, double verticalScale, int heightO
             TYPE_CODEC.optionalFieldOf("projection", GeoProjection.Type.EQUIRECTANGULAR).forGetter(EarthSettings::projectionType),
             SOURCE_CODEC.optionalFieldOf("data_source", EarthData.Source.TERRARIUM).forGetter(EarthSettings::dataSource),
             Codec.STRING.optionalFieldOf("osm_snapshot", dev.esiliw.aquarium.data.OsmWater.DEFAULT_SNAPSHOT).forGetter(EarthSettings::osmSnapshot),
-            Codec.BOOL.optionalFieldOf("osm_ways", false).forGetter(EarthSettings::osmWays)
+            Codec.BOOL.optionalFieldOf("osm_ways", false).forGetter(EarthSettings::osmWays),
+            Codec.BOOL.optionalFieldOf("osm_buildings", false).forGetter(EarthSettings::osmBuildings)
     ).apply(i, EarthSettings::new));
 
     public GeoProjection projection() {
@@ -77,7 +79,7 @@ public record EarthSettings(double worldScale, double verticalScale, int heightO
 
     public EarthData createData() {
         // Mercator blocks get smaller away from the equator: pick data detail for ~60 degrees latitude
-        if (this.dataSource == EarthData.Source.OPEN) return EarthData.get(this.worldScale, EarthData.Source.OPEN, this.osmSnapshot, this.osmWays);
+        if (this.dataSource == EarthData.Source.OPEN) return EarthData.get(this.worldScale, EarthData.Source.OPEN, this.osmSnapshot, this.osmWays, this.osmBuildings);
         return EarthData.forScale(this.projectionType == GeoProjection.Type.MERCATOR ? this.worldScale * 0.5 : this.worldScale);
     }
 

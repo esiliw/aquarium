@@ -66,6 +66,7 @@ public class EarthChunkGenerator extends ChunkGenerator {
     private static final BlockState RAIL_LINE = Blocks.POLISHED_ANDESITE.defaultBlockState();
     private static final BlockState TRAM_LINE = Blocks.YELLOW_TERRACOTTA.defaultBlockState();
     private static final BlockState STATION = Blocks.RED_CONCRETE.defaultBlockState();
+    private static final BlockState BUILDING = Blocks.COBBLESTONE.defaultBlockState();
 
     public final EarthSettings settings;
     private final GeoProjection projection;
@@ -210,6 +211,8 @@ public class EarthChunkGenerator extends ChunkGenerator {
                 }
                 if (underwater) {
                     for (int y = Math.max(top + 1, minY); y <= Math.min(c.waterTop(), maxY); y++) setBlock(chunk, lx, y, lz, WATER);
+                } else if (c.buildingTop() > top) {
+                    for (int y = Math.max(top + 1, minY); y <= Math.min(c.buildingTop(), maxY); y++) setBlock(chunk, lx, y, lz, BUILDING);
                 }
             }
         }
@@ -262,7 +265,7 @@ public class EarthChunkGenerator extends ChunkGenerator {
     public int getBaseHeight(int x, int z, Heightmap.Types type, LevelHeightAccessor level, RandomState random) {
         TerrainModel.Column c = this.column(x, z);
         if (type == Heightmap.Types.OCEAN_FLOOR || type == Heightmap.Types.OCEAN_FLOOR_WG) return c.top() + 1;
-        return Math.max(c.top(), c.waterTop()) + 1;
+        return c.highest() + 1;
     }
 
     @Override
@@ -275,6 +278,7 @@ public class EarthChunkGenerator extends ChunkGenerator {
             int y = minY + i;
             if (y <= c.top()) column[i] = y == minY ? BEDROCK : STONE;
             else if (y <= c.waterTop()) column[i] = WATER;
+            else if (y <= c.buildingTop()) column[i] = BUILDING;
             else column[i] = Blocks.AIR.defaultBlockState();
         }
         return new NoiseColumn(minY, column);

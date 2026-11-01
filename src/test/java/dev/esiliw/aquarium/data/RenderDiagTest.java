@@ -52,7 +52,7 @@ public class RenderDiagTest {
     }
 
     static void renderPlace(Place p, File out) throws Exception {
-        EarthSettings s = new EarthSettings(p.scale, p.vscale, 0, 63, -512, 2544, 0, 0, GeoProjection.Type.MERCATOR, EarthData.Source.OPEN, OsmWater.DEFAULT_SNAPSHOT, true);
+        EarthSettings s = new EarthSettings(p.scale, p.vscale, 0, 63, -512, 2544, 0, 0, GeoProjection.Type.MERCATOR, EarthData.Source.OPEN, OsmWater.DEFAULT_SNAPSHOT, true, true);
         GeoProjection proj = s.projection();
         TerrainModel model = new TerrainModel(s, proj, s.createData());
         EarthData data = model.data();
@@ -80,6 +80,9 @@ public class RenderDiagTest {
                     if (c.ocean()) rgb = mix(0x8ec8ff, 0x0a2a8a, t);
                     else rgb = mix(0x9ff0e0, 0x0a6a5a, t);
                     if (c.waterTop() != 62) rgb = mix(rgb, 0xff00ff, 0.35);   // water surface not at sea level
+                } else if (c.buildingTop() > c.top()) {
+                    int h = c.buildingTop() - c.top();
+                    rgb = mix(0xc8c0b8, 0x504840, Math.min(1, h / 20.0));      // buildings: darker = taller
                 } else if (c.way() != OsmWays.NONE) {
                     rgb = switch (c.way()) {
                         case OsmWays.MAJOR -> 0x202020;

@@ -19,7 +19,7 @@ public final class SpawnHandler {
         int x = (int) Math.floor(g.projection().blockX(g.settings.spawnLon()));
         int z = (int) Math.floor(g.projection().blockZ(g.settings.spawnLat()));
         TerrainModel.Column c = g.column(x, z);
-        int y = Math.max(c.top(), c.waterTop()) + 1;
+        int y = c.highest() + 1;
         data.setSpawn(new BlockPos(x, y, z), 0.0F);
         Flag flag = level.getDataStorage().computeIfAbsent(Flag::load, Flag::new, "aquarium_spawn");
         flag.done = true;
@@ -36,7 +36,7 @@ public final class SpawnHandler {
         int x = (int) Math.floor(g.projection().blockX(g.settings.spawnLon()));
         int z = (int) Math.floor(g.projection().blockZ(g.settings.spawnLat()));
         TerrainModel.Column c = g.column(x, z);
-        int y = Math.max(c.top(), c.waterTop()) + 1;
+        int y = c.highest() + 1;
         level.setDefaultSpawnPos(new BlockPos(x, y, z), 0.0F);
         flag.done = true;
         flag.setDirty();

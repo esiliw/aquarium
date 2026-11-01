@@ -93,7 +93,7 @@ public final class GeoCommands {
             int x = (int) Math.floor(g.projection().blockX(lon));
             int z = (int) Math.floor(g.projection().blockZ(lat));
             dev.esiliw.aquarium.world.TerrainModel.Column c = g.column(x, z);
-            int y = Math.max(c.top(), c.waterTop()) + 2;
+            int y = c.highest() + 2;
             return new int[]{x, y, z};
         }, Aquarium.IO_EXECUTOR).thenAccept(p -> src.getServer().execute(() -> {
             ServerLevel level = src.getLevel();

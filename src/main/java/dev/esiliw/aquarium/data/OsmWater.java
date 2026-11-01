@@ -16,7 +16,7 @@ public final class OsmWater {
     public static final byte LAND = 0, OCEAN = 1, LAKE = 2, RIVER = 3, STREAM = 4;
     public static final String DEFAULT_SNAPSHOT = "20261025_080012_pt";
 
-    public record Tile(byte[] cls, short[] dist, byte[] ways) {      // dist: metres to the nearest non-water pixel (capped)
+    public record Tile(byte[] cls, short[] dist, byte[] ways, OsmBuildings.Raster buildings) {      // dist: metres to the nearest non-water pixel (capped)
     }
 
     private final double blockMetersAtEquator;
@@ -26,6 +26,13 @@ public final class OsmWater {
     private final int Z;
 
     private final boolean ways;
+    private OsmBuildings.Elevation buildingElevation;     // non-null when buildings are wanted
+
+    /** turn building boxes on; elevation gives the ground height at a building's centre */
+    public OsmWater withBuildings(OsmBuildings.Elevation elevation) {
+        this.buildingElevation = elevation;
+        return this;
+    }
 
     public OsmWater(String snapshot, double blockMetersAtEquator) {
         this(snapshot, blockMetersAtEquator, false);
@@ -71,7 +78,8 @@ public final class OsmWater {
     }
 
     /** water class and distance to shore (m) at a point; known = false where OSM has no tile (decide from elevation) */
-    public record Sample(byte cls, double dist, boolean known, byte way) {
+    /** buildingBase/buildingHeight: ground elevation and height (m) of a building covering this point, NaN if none */
+    public record Sample(byte cls, double dist, boolean known, byte way, double buildingBase, double buildingHeight) {
     }
 
     public Sample sample(double lat, double lon) {
@@ -80,12 +88,18 @@ public final class OsmWater {
         int n = 1 << Z;
         int tx = Math.floorMod((int) Math.floor(fx), n), ty = Math.max(0, Math.min(n - 1, (int) Math.floor(fy)));
         Tile t = this.tile(tx, ty, lat);
-        if (t == null) return new Sample(LAND, 0, false, OsmWays.NONE);
+        if (t == null) return new Sample(LAND, 0, false, OsmWays.NONE, Double.NaN, Double.NaN);
         int px = (int) Math.floor((fx - Math.floor(fx)) * RES), py = (int) Math.floor((fy - Math.floor(fy)) * RES);
         px = Math.max(0, Math.min(RES - 1, px));
         py = Math.max(0, Math.min(RES - 1, py));
         int i = px + py * RES;
-        return new Sample(t.cls[i], t.dist[i], true, t.ways == null ? OsmWays.NONE : t.ways[i]);
+        double bBase = Double.NaN, bHeight = Double.NaN;
+        if (t.buildings != null && t.buildings.idx()[i] != 0) {
+            int b = t.buildings.idx()[i] - 1;
+            bBase = t.buildings.base()[b];
+            bHeight = t.buildings.height()[b];
+        }
+        return new Sample(t.cls[i], t.dist[i], true, t.ways == null ? OsmWays.NONE : t.ways[i], bBase, bHeight);
     }
 
     private final java.util.LinkedHashMap<Long, Tile> lru = new java.util.LinkedHashMap<>(64, 0.75f, true) {
@@ -95,7 +109,7 @@ public final class OsmWater {
         }
     };
 
-    private static final Tile MISSING = new Tile(new byte[0], new short[0], null);
+    private static final Tile MISSING = new Tile(new byte[0], new short[0], null, null);
 
     private Tile tile(int tx, int ty, double lat) {
         long key = ((long) tx << 32) | (ty & 0xFFFFFFFFL);
@@ -104,8 +118,8 @@ public final class OsmWater {
             if (t == MISSING) return null;
             if (t != null) return t;
         }
-        byte[][] both = this.rasters(tx, ty);
-        Tile t = both == null ? null : this.withDistance(tx, ty, both[0], both[1]);
+        Object[] all = this.rasters(tx, ty);
+        Tile t = all == null ? null : this.withDistance(tx, ty, (byte[]) all[0], (byte[]) all[1], (OsmBuildings.Raster) all[2]);
         synchronized (this.lru) {
             this.lru.put(key, t == null ? MISSING : t);
         }
@@ -120,37 +134,39 @@ public final class OsmWater {
         return this.rawTiles.get(this.Z, tx, ty);
     }
 
-    private final java.util.LinkedHashMap<Long, byte[][]> classCache = new java.util.LinkedHashMap<>(64, 0.75f, true) {
+    private final java.util.LinkedHashMap<Long, Object[]> classCache = new java.util.LinkedHashMap<>(64, 0.75f, true) {
         @Override
-        protected boolean removeEldestEntry(Map.Entry<Long, byte[][]> e) {
+        protected boolean removeEldestEntry(Map.Entry<Long, Object[]> e) {
             return this.size() > 96;
         }
     };
 
     /** the water classes of one tile, or null if OSM has no such tile */
     private byte[] classes(int tx, int ty) {
-        byte[][] r = this.rasters(tx, ty);
-        return r == null ? null : r[0];
+        Object[] r = this.rasters(tx, ty);
+        return r == null ? null : (byte[]) r[0];
     }
 
-    private static final byte[][] NO_RASTERS = new byte[0][];
+    private static final Object[] NO_RASTERS = new Object[0];
 
-    /** {water classes, way guide classes (or null)} of one tile, or null if OSM has no such tile */
-    private byte[][] rasters(int tx, int ty) {
+    /** {water classes, way guide classes (or null), buildings (or null)} of one tile, or null if OSM has no such tile */
+    private Object[] rasters(int tx, int ty) {
         int n = 1 << this.Z;
         tx = Math.floorMod(tx, n);
         if (ty < 0 || ty >= n) return null;
         long key = ((long) tx << 32) | (ty & 0xFFFFFFFFL);
         synchronized (this.classCache) {
-            byte[][] c = this.classCache.get(key);
+            Object[] c = this.classCache.get(key);
             if (c != null) return c == NO_RASTERS ? null : c;
         }
         byte[] bytes = this.fetch(tx, ty);
-        byte[][] c = null;
+        Object[] c = null;
         try {
             if (bytes != null) {
                 Map<String, MvtReader.Layer> layers = MvtReader.read(bytes);
-                c = new byte[][]{this.rasterise(layers, tx, ty), this.ways ? OsmWays.rasterise(layers, this.Z, ty, RES, this.blockMetersAtEquator) : null};
+                c = new Object[]{this.rasterise(layers, tx, ty),
+                        this.ways ? OsmWays.rasterise(layers, this.Z, ty, RES, this.blockMetersAtEquator) : null,
+                        this.buildingElevation != null ? OsmBuildings.rasterise(layers, this.Z, tx, ty, RES, this.buildingElevation) : null};
             }
         } catch (IOException e) {
             DataEnv.LOGGER.error("Bad OSM tile {}/{}/{}: {}", this.Z, tx, ty, e.toString());
@@ -162,7 +178,7 @@ public final class OsmWater {
     }
 
     /** distance to shore measured across the tile and its 8 neighbours, so it doesn't jump at tile edges */
-    private Tile withDistance(int tx, int ty, byte[] center, byte[] ways) {
+    private Tile withDistance(int tx, int ty, byte[] center, byte[] ways, OsmBuildings.Raster buildings) {
         int W = RES * 3;
         float[] d = new float[W * W];
         final float INF = 1e9f, D = 1.4142f;
@@ -205,7 +221,7 @@ public final class OsmWater {
             float v = d[(x + RES) + (y + RES) * W];
             dist[x + y * RES] = (short) Math.min(30000, v >= INF ? 30000 : Math.round(v * pxMeters));
         }
-        return new Tile(center, dist, ways);
+        return new Tile(center, dist, ways, buildings);
     }
 
     private byte[] rasterise(Map<String, MvtReader.Layer> layers, int tx, int ty) {
