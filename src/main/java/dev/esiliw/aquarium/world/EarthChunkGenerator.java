@@ -69,6 +69,7 @@ public class EarthChunkGenerator extends ChunkGenerator {
     private static final BlockState BUILDING = Blocks.COBBLESTONE.defaultBlockState();
     private static final BlockState COARSE_DIRT = Blocks.COARSE_DIRT.defaultBlockState();
     private static final BlockState MOSS = Blocks.MOSS_BLOCK.defaultBlockState();
+    private static final BlockState RED_SANDSTONE = Blocks.RED_SANDSTONE.defaultBlockState();
 
     public final EarthSettings settings;
     private final GeoProjection projection;
@@ -185,7 +186,7 @@ public class EarthChunkGenerator extends ChunkGenerator {
                     under = STONE;
                 } else if (c.climate() != dev.esiliw.aquarium.data.Climate.NONE && this.climatePalette(c, x0 + lx, z0 + lz) != null) {
                     surface = this.climatePalette(c, x0 + lx, z0 + lz);
-                    under = surface == GRAVEL ? GRAVEL : surface == SAND ? SANDSTONE : surface == STONE ? STONE : DIRT;
+                    under = surface == GRAVEL ? GRAVEL : surface == SAND ? SANDSTONE : surface == RED_SAND ? RED_SANDSTONE : surface == STONE ? STONE : DIRT;
                 } else if (cover == Cover.PERMANENT_SNOW) {
                     surface = SNOW;
                     under = STONE;
@@ -232,6 +233,12 @@ public class EarthChunkGenerator extends ChunkGenerator {
         double n = dev.esiliw.aquarium.data.Noise.smooth(x / 5.0, z / 5.0, 51) * 0.7 + dev.esiliw.aquarium.data.Noise.smooth(x / 1.7, z / 1.7, 52) * 0.3;
         if (cover == Cover.PERMANENT_SNOW || cover == Cover.URBAN || cover == Cover.FLOODED_VEGETATION) return null;
         if (c.elevation() < 3 && c.top() <= this.settings.seaLevel() + 1) return null;             // beaches stay sand
+        if ((k == dev.esiliw.aquarium.data.Climate.BWh || k == dev.esiliw.aquarium.data.Climate.BSh) && !forest
+                && EarthBiomes.outback(c.lat(), this.projection.lon(x + 0.5))) {
+            // red Outback ground: red sand with coarse dirt, dry grass on the steppe edges
+            if (k == dev.esiliw.aquarium.data.Climate.BWh) return n > 0.35 ? COARSE_DIRT : RED_SAND;
+            return n > 0.15 ? RED_SAND : n < -0.35 ? COARSE_DIRT : null;
+        }
         if (k == dev.esiliw.aquarium.data.Climate.BWk && !forest) return n > 0.25 ? GRAVEL : n < -0.2 ? SAND : COARSE_DIRT;
         if (k == dev.esiliw.aquarium.data.Climate.ET && !forest && !cover.isBare()) return n > 0.2 ? MOSS : n < -0.3 ? COARSE_DIRT : GRASS;
         if (cover.isBare()) {

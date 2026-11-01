@@ -32,6 +32,7 @@ public class RenderDiagTest {
                 new Place("japan", 100, 100, 33.0, 132.0, 39.0, 141.0, 2),            // humid subtropical vs mountains
                 new Place("central_asia", 400, 400, 36.0, 50.0, 50.0, 80.0, 2),       // cold desert, steppe
                 new Place("scandinavia", 400, 400, 55.0, 4.0, 71.0, 31.0, 2),         // taiga, tundra, mixed forest
+                new Place("australia", 1000, 1000, -39.0, 113.0, -11.0, 154.0, 2),    // red Outback, savanna, temperate south-east
                 new Place("halle_rail", 4, 5, 51.465, 11.96, 51.49, 12.00, 1),        // rail hub, trams
                 new Place("geirangerfjord", 4, 5, 62.06, 6.95, 62.16, 7.25, 4),       // fjord, steep mountains
                 new Place("venice_lagoon", 4, 5, 45.35, 12.20, 45.55, 12.50, 4),      // lagoon, islands
@@ -131,7 +132,7 @@ public class RenderDiagTest {
             for (int i = 0; i < w; i++) {
                 TerrainModel.Column c = cols[i + j * w];
                 double lat = proj.lat(bz0 + j * p.step + 0.5), lon = proj.lon(bx0 + i * p.step + 0.5);
-                String b = dev.esiliw.aquarium.world.EarthBiomes.select(c.cover(), c.elevation(), lat, c.ocean(), Climate.at(lat, lon)).location().getPath();
+                String b = dev.esiliw.aquarium.world.EarthBiomes.select(c.cover(), c.elevation(), lat, lon, c.ocean(), Climate.at(lat, lon)).location().getPath();
                 int rgb = c.lake() ? 0x4080ff : biomeColor(b);
                 bio.setRGB(i, j, rgb);
                 legend.merge(b, 1, Integer::sum);

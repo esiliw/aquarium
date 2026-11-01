@@ -42,7 +42,16 @@ public final class EarthBiomes {
     }
 
     /** biome from land cover + Köppen climate (+ altitude for mountains); climate NONE falls back to latitude rules */
+    /** mainland Australia's interior, where deserts are red */
+    public static boolean outback(double lat, double lon) {
+        return lat < -17 && lat > -35 && lon > 114 && lon < 151;
+    }
+
     public static ResourceKey<Biome> select(Cover cover, double elevation, double lat, boolean ocean, byte climate) {
+        return select(cover, elevation, lat, Double.NaN, ocean, climate);
+    }
+
+    public static ResourceKey<Biome> select(Cover cover, double elevation, double lat, double lon, boolean ocean, byte climate) {
         double alat = Math.abs(lat);
         if (ocean) {
             boolean deep = elevation < -200;
@@ -89,6 +98,8 @@ public final class EarthBiomes {
         }
         if (Climate.arid(climate)) {
             boolean hot = climate == Climate.BWh || climate == Climate.BSh;
+            // the red Outback: badlands colours (no mesa cliffs here, terrain comes from the height data)
+            if (outback(lat, lon) && climate == Climate.BWh && !trees) return Biomes.BADLANDS;
             if (trees) return hot ? Biomes.SAVANNA : MEDITERRANEAN_WOODLAND;
             if (bare) return climate == Climate.BWh ? (cover == Cover.BARE_CONSOLIDATED ? Biomes.BADLANDS : Biomes.DESERT)
                     : climate == Climate.BWk ? COLD_DESERT : hot ? Biomes.DESERT : COLD_DESERT;
