@@ -33,7 +33,7 @@ WOOD = {
     "palm": dict(
         bark=["#bab4a9", "#aea89c", "#c6c1b6"], bark_dark="#7d766b", bark_light="#d6d1c6",
         inner=["#b47c56", "#a9714c", "#bd875f"], inner_dark="#4f2f22",
-        planks=["#b07a55", "#a46e4b", "#bb8660"], seam="#7a4a32", grain="#4f2f22"),
+        planks=["#b07a55", "#a46e4b", "#bb8660"], seam="#8a5739", grain="#4f2f22"),
     "eucalyptus": dict(
         bark=["#a9a497", "#cfc6ae", "#9a978a", "#c79f8c", "#b8a07f"], bark_dark="#7a776a", bark_light="#ddd4bd",
         inner=["#c98e6c", "#bf805f", "#d49c7b"], inner_dark="#9c5e40",
@@ -140,15 +140,14 @@ def planks(w, p):
                 c = p["grain"]
             im.putpixel((x, y), hexc(c))
     if w == "palm":
-        # dark fibre flecks along each board
-        for _ in range(16):
+        # fibres hinted by shading: small flecks only a little darker (or lighter) than the wood
+        for _ in range(26):
             x, y = r.randrange(16), r.randrange(16)
-            if y % 4 == 3:
+            if y % 4 == 3 or x == (5 + (y // 4) * 7) % 16:
                 continue
-            for k in range(r.randint(2, 3)):
-                xx = (x + k) % 16
-                if xx != (5 + (y // 4) * 7) % 16:
-                    im.putpixel((xx, y), hexc(p["grain"]))
+            im.putpixel((x, y), hexc(pick(r, ["#986443", "#8f5d3e", "#c39070"], [4, 2, 2])))
+            if r.random() < .3 and (x + 1) % 16 != (5 + (y // 4) * 7) % 16:
+                im.putpixel(((x + 1) % 16, y), hexc("#9e6a48"))
     return im
 
 
