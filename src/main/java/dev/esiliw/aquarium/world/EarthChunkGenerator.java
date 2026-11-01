@@ -70,6 +70,9 @@ public class EarthChunkGenerator extends ChunkGenerator {
     private static final BlockState COARSE_DIRT = Blocks.COARSE_DIRT.defaultBlockState();
     private static final BlockState MOSS = Blocks.MOSS_BLOCK.defaultBlockState();
     private static final BlockState RED_SANDSTONE = Blocks.RED_SANDSTONE.defaultBlockState();
+    private static final BlockState BASALT = Blocks.BASALT.defaultBlockState();
+    private static final BlockState BLACKSTONE = Blocks.BLACKSTONE.defaultBlockState();
+    private static final BlockState BLACK_SAND = Blocks.BLACK_CONCRETE_POWDER.defaultBlockState();
 
     public final EarthSettings settings;
     private final GeoProjection projection;
@@ -186,7 +189,12 @@ public class EarthChunkGenerator extends ChunkGenerator {
                     under = STONE;
                 } else if (c.climate() != dev.esiliw.aquarium.data.Climate.NONE && this.climatePalette(c, x0 + lx, z0 + lz) != null) {
                     surface = this.climatePalette(c, x0 + lx, z0 + lz);
-                    under = surface == GRAVEL ? GRAVEL : surface == SAND ? SANDSTONE : surface == RED_SAND ? RED_SANDSTONE : surface == STONE ? STONE : DIRT;
+                    if (surface == GRAVEL) under = GRAVEL;
+                    else if (surface == SAND) under = SANDSTONE;
+                    else if (surface == RED_SAND) under = RED_SANDSTONE;
+                    else if (surface == BASALT || surface == BLACKSTONE || surface == BLACK_SAND) under = BLACKSTONE;
+                    else if (surface == STONE) under = STONE;
+                    else under = DIRT;
                 } else if (cover == Cover.PERMANENT_SNOW) {
                     surface = SNOW;
                     under = STONE;
@@ -232,7 +240,13 @@ public class EarthChunkGenerator extends ChunkGenerator {
         boolean forest = cover.isForest();
         double n = dev.esiliw.aquarium.data.Noise.smooth(x / 5.0, z / 5.0, 51) * 0.7 + dev.esiliw.aquarium.data.Noise.smooth(x / 1.7, z / 1.7, 52) * 0.3;
         if (cover == Cover.PERMANENT_SNOW || cover == Cover.URBAN || cover == Cover.FLOODED_VEGETATION) return null;
-        if (c.elevation() < 3 && c.top() <= this.settings.seaLevel() + 1) return null;             // beaches stay sand
+        boolean beach = c.elevation() < 3 && c.top() <= this.settings.seaLevel() + 1;
+        if (EarthBiomes.volcanic(c.lat(), this.projection.lon(x + 0.5))) {
+            // black lava fields and black sand beaches
+            if (beach && (cover.isBare() || cover == Cover.SPARSE_VEGETATION || cover == Cover.NO)) return BLACK_SAND;
+            if (cover.isBare() || cover == Cover.SPARSE_VEGETATION) return n > 0.2 ? BASALT : BLACKSTONE;
+        }
+        if (beach) return null;                                                                   // beaches stay sand
         if ((k == dev.esiliw.aquarium.data.Climate.BWh || k == dev.esiliw.aquarium.data.Climate.BSh) && !forest
                 && EarthBiomes.outback(c.lat(), this.projection.lon(x + 0.5))) {
             // red Outback ground: red sand with coarse dirt, dry grass on the steppe edges
@@ -246,6 +260,8 @@ public class EarthChunkGenerator extends ChunkGenerator {
             return n > 0 ? STONE : GRAVEL;
         }
         boolean dry = dev.esiliw.aquarium.data.Climate.steppe(k) || dev.esiliw.aquarium.data.Climate.mediterranean(k) || k == dev.esiliw.aquarium.data.Climate.BWh;
+        boolean farm = cover == Cover.RAINFED_CROPLAND || cover == Cover.IRRIGATED_CROPLAND || cover == Cover.CROPLAND_WITH_VEGETATION;
+        if (farm && (k == dev.esiliw.aquarium.data.Climate.BWh || k == dev.esiliw.aquarium.data.Climate.BWk)) return null;   // irrigated fields stay green
         if (dry && !forest) return n > (k == dev.esiliw.aquarium.data.Climate.BWh ? 0.0 : 0.45) ? COARSE_DIRT : null;
         return null;
     }

@@ -33,6 +33,7 @@ public class RenderDiagTest {
                 new Place("central_asia", 400, 400, 36.0, 50.0, 50.0, 80.0, 2),       // cold desert, steppe
                 new Place("scandinavia", 400, 400, 55.0, 4.0, 71.0, 31.0, 2),         // taiga, tundra, mixed forest
                 new Place("australia", 1000, 1000, -39.0, 113.0, -11.0, 154.0, 2),    // red Outback, savanna, temperate south-east
+                new Place("iceland", 100, 100, 63.3, -24.5, 66.6, -13.5, 2),          // volcanic: black lava, moss, tundra
                 new Place("halle_rail", 4, 5, 51.465, 11.96, 51.49, 12.00, 1),        // rail hub, trams
                 new Place("geirangerfjord", 4, 5, 62.06, 6.95, 62.16, 7.25, 4),       // fjord, steep mountains
                 new Place("venice_lagoon", 4, 5, 45.35, 12.20, 45.55, 12.50, 4),      // lagoon, islands

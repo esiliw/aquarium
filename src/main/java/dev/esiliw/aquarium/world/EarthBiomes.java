@@ -42,6 +42,26 @@ public final class EarthBiomes {
     }
 
     /** biome from land cover + Köppen climate (+ altitude for mountains); climate NONE falls back to latitude rules */
+    /** volcanic islands and fields where bare ground is black lava and beaches are black sand */
+    private static final double[][] VOLCANIC = {
+            {63.2, 66.6, -24.6, -13.4},     // Iceland
+            {18.8, 22.3, -160.3, -154.7},   // Hawaii
+            {27.6, 29.5, -18.2, -13.3},     // Canary Islands
+            {36.9, 39.8, -31.3, -25.0},     // Azores
+            {37.6, 37.9, 14.8, 15.2},       // Etna
+            {40.7, 40.9, 14.3, 14.5},       // Vesuvius
+            {-1.5, 0.7, -92.0, -89.0},      // Galapagos
+            {-21.4, -20.8, 55.2, 55.9},     // Reunion
+            {-39.4, -38.9, 175.4, 175.8},   // Tongariro, New Zealand
+            {31.5, 31.7, 130.5, 130.8},     // Sakurajima
+            {38.4, 38.9, 15.1, 15.3},       // Aeolian Islands (Stromboli)
+    };
+
+    public static boolean volcanic(double lat, double lon) {
+        for (double[] b : VOLCANIC) if (lat >= b[0] && lat <= b[1] && lon >= b[2] && lon <= b[3]) return true;
+        return false;
+    }
+
     /** mainland Australia's interior, where deserts are red */
     public static boolean outback(double lat, double lon) {
         return lat < -17 && lat > -35 && lon > 114 && lon < 151;
@@ -103,8 +123,8 @@ public final class EarthBiomes {
             if (trees) return hot ? Biomes.SAVANNA : MEDITERRANEAN_WOODLAND;
             if (bare) return climate == Climate.BWh ? (cover == Cover.BARE_CONSOLIDATED ? Biomes.BADLANDS : Biomes.DESERT)
                     : climate == Climate.BWk ? COLD_DESERT : hot ? Biomes.DESERT : COLD_DESERT;
-            if (climate == Climate.BWh) return farm ? Biomes.SAVANNA : Biomes.DESERT;
-            if (climate == Climate.BWk) return farm ? STEPPE : COLD_DESERT;
+            if (climate == Climate.BWh) return farm ? Biomes.PLAINS : Biomes.DESERT;      // irrigated fields in the desert stay green
+            if (climate == Climate.BWk) return farm ? Biomes.PLAINS : COLD_DESERT;
             return hot ? Biomes.SAVANNA : STEPPE;
         }
         if (Climate.mediterranean(climate)) {
