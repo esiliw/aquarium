@@ -57,7 +57,7 @@ public final class AwsElevation {
         return (1.0 - Math.log(Math.tan(phi) + 1.0 / Math.cos(phi)) / Math.PI) / 2.0 * SIZE * (1 << zoom);
     }
 
-    private double raw(int px, int py) {
+    double raw(int px, int py) {
         int n = SIZE << this.zoom;
         px = Math.floorMod(px, n);
         py = Math.max(0, Math.min(n - 1, py));
