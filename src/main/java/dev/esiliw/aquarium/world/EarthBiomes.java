@@ -16,7 +16,7 @@ public final class EarthBiomes {
             Biomes.OCEAN, Biomes.DEEP_OCEAN, Biomes.FROZEN_OCEAN, Biomes.DEEP_FROZEN_OCEAN, Biomes.COLD_OCEAN, Biomes.DEEP_COLD_OCEAN,
             Biomes.LUKEWARM_OCEAN, Biomes.DEEP_LUKEWARM_OCEAN, Biomes.WARM_OCEAN, Biomes.RIVER, Biomes.FROZEN_RIVER, Biomes.BEACH,
             Biomes.SNOWY_BEACH, Biomes.PLAINS, Biomes.SUNFLOWER_PLAINS, Biomes.SNOWY_PLAINS, Biomes.FOREST, Biomes.BIRCH_FOREST,
-            Biomes.DARK_FOREST, Biomes.FLOWER_FOREST, Biomes.TAIGA, Biomes.SNOWY_TAIGA, Biomes.OLD_GROWTH_SPRUCE_TAIGA,
+            Biomes.FLOWER_FOREST, Biomes.TAIGA, Biomes.SNOWY_TAIGA, Biomes.OLD_GROWTH_SPRUCE_TAIGA,
             Biomes.OLD_GROWTH_PINE_TAIGA, Biomes.JUNGLE, Biomes.SPARSE_JUNGLE, Biomes.SAVANNA, Biomes.SAVANNA_PLATEAU,
             Biomes.WINDSWEPT_SAVANNA, Biomes.DESERT, Biomes.BADLANDS, Biomes.SWAMP, Biomes.MANGROVE_SWAMP, Biomes.MEADOW,
             Biomes.GROVE, Biomes.SNOWY_SLOPES, Biomes.FROZEN_PEAKS, Biomes.JAGGED_PEAKS, Biomes.STONY_PEAKS, Biomes.ICE_SPIKES,
@@ -55,7 +55,7 @@ public final class EarthBiomes {
             case NEEDLEAF_EVERGREEN, NEEDLEAF_EVERGREEN_OPEN -> cold > 58 ? Biomes.SNOWY_TAIGA : Biomes.TAIGA;
             case NEEDLEAF_EVERGREEN_CLOSED -> cold > 58 ? Biomes.SNOWY_TAIGA : Biomes.OLD_GROWTH_SPRUCE_TAIGA;
             case NEEDLEAF_DECIDUOUS, NEEDLEAF_DECIDUOUS_CLOSED, NEEDLEAF_DECIDUOUS_OPEN -> cold > 58 ? Biomes.SNOWY_TAIGA : Biomes.OLD_GROWTH_PINE_TAIGA;
-            case MIXED_LEAF_TYPE -> cold > 50 ? Biomes.TAIGA : Biomes.DARK_FOREST;
+            case MIXED_LEAF_TYPE -> cold > 58 ? Biomes.TAIGA : Biomes.FOREST;      // no dark forest anywhere
             case TREE_AND_SHRUB_WITH_HERBACEOUS_COVER, TREE_OR_SHRUB_COVER -> tropical ? Biomes.SPARSE_JUNGLE : (cold > 55 ? Biomes.TAIGA : Biomes.FOREST);
             case HERBACEOUS_COVER_WITH_TREE_AND_SHRUB -> tropical ? Biomes.SAVANNA : Biomes.MEADOW;
             case SHRUBLAND, SHRUBLAND_EVERGREEN, SHRUBLAND_DECIDUOUS -> alat < 38 ? Biomes.SAVANNA : (cold > 60 ? Biomes.SNOWY_PLAINS : Biomes.WINDSWEPT_SAVANNA);
