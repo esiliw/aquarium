@@ -26,9 +26,11 @@ public final class TerrainModel {
     /**
      * top = y of the highest solid block, waterTop = y of the highest water block (or MIN_VALUE).
      */
-    public record Column(int top, int waterTop, double elevation, Cover cover, boolean ocean, boolean lake, double lat, byte way, int buildingTop) {
+    public record Column(int top, int waterTop, double elevation, Cover cover, boolean ocean, boolean lake, double lat, byte way, int buildingTop,
+                         byte climate) {
         public Column(int top, int waterTop, double elevation, Cover cover, boolean ocean, boolean lake, double lat) {
-            this(top, waterTop, elevation, cover, ocean, lake, lat, dev.esiliw.aquarium.data.OsmWays.NONE, Integer.MIN_VALUE);
+            this(top, waterTop, elevation, cover, ocean, lake, lat, dev.esiliw.aquarium.data.OsmWays.NONE, Integer.MIN_VALUE,
+                    dev.esiliw.aquarium.data.Climate.NONE);
         }
 
         /** y of the highest non-air block: ground, water or building */
@@ -149,6 +151,6 @@ public final class TerrainModel {
             int roof = this.surfaceY(Math.max(0.5, w.buildingBase())) + floors;
             if (roof > top) buildingTop = roof;
         }
-        return new Column(top, Integer.MIN_VALUE, e, cover, false, false, lat, w.way(), buildingTop);
+        return new Column(top, Integer.MIN_VALUE, e, cover, false, false, lat, w.way(), buildingTop, dev.esiliw.aquarium.data.Climate.at(lat, lon));
     }
 }

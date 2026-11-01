@@ -67,6 +67,8 @@ public class EarthChunkGenerator extends ChunkGenerator {
     private static final BlockState TRAM_LINE = Blocks.YELLOW_TERRACOTTA.defaultBlockState();
     private static final BlockState STATION = Blocks.RED_CONCRETE.defaultBlockState();
     private static final BlockState BUILDING = Blocks.COBBLESTONE.defaultBlockState();
+    private static final BlockState COARSE_DIRT = Blocks.COARSE_DIRT.defaultBlockState();
+    private static final BlockState MOSS = Blocks.MOSS_BLOCK.defaultBlockState();
 
     public final EarthSettings settings;
     private final GeoProjection projection;
@@ -181,6 +183,9 @@ public class EarthChunkGenerator extends ChunkGenerator {
                 } else if (slope >= 4) {
                     surface = STONE;
                     under = STONE;
+                } else if (c.climate() != dev.esiliw.aquarium.data.Climate.NONE && this.climatePalette(c, x0 + lx, z0 + lz) != null) {
+                    surface = this.climatePalette(c, x0 + lx, z0 + lz);
+                    under = surface == GRAVEL ? GRAVEL : surface == SAND ? SANDSTONE : surface == STONE ? STONE : DIRT;
                 } else if (cover == Cover.PERMANENT_SNOW) {
                     surface = SNOW;
                     under = STONE;
@@ -217,6 +222,25 @@ public class EarthChunkGenerator extends ChunkGenerator {
             }
         }
         Heightmap.primeHeightmaps(chunk, EnumSet.of(Heightmap.Types.OCEAN_FLOOR_WG, Heightmap.Types.WORLD_SURFACE_WG));
+    }
+
+    /** climate-specific ground: cold-desert gravel, dry grass patches, tundra moss, rock instead of sand in wet climates */
+    private BlockState climatePalette(TerrainModel.Column c, int x, int z) {
+        byte k = c.climate();
+        Cover cover = c.cover();
+        boolean forest = cover.isForest();
+        double n = dev.esiliw.aquarium.data.Noise.smooth(x / 5.0, z / 5.0, 51) * 0.7 + dev.esiliw.aquarium.data.Noise.smooth(x / 1.7, z / 1.7, 52) * 0.3;
+        if (cover == Cover.PERMANENT_SNOW || cover == Cover.URBAN || cover == Cover.FLOODED_VEGETATION) return null;
+        if (c.elevation() < 3 && c.top() <= this.settings.seaLevel() + 1) return null;             // beaches stay sand
+        if (k == dev.esiliw.aquarium.data.Climate.BWk && !forest) return n > 0.25 ? GRAVEL : n < -0.2 ? SAND : COARSE_DIRT;
+        if (k == dev.esiliw.aquarium.data.Climate.ET && !forest && !cover.isBare()) return n > 0.2 ? MOSS : n < -0.3 ? COARSE_DIRT : GRASS;
+        if (cover.isBare()) {
+            if (dev.esiliw.aquarium.data.Climate.arid(k) || dev.esiliw.aquarium.data.Climate.tropical(k)) return null;   // sand, as before
+            return n > 0 ? STONE : GRAVEL;
+        }
+        boolean dry = dev.esiliw.aquarium.data.Climate.steppe(k) || dev.esiliw.aquarium.data.Climate.mediterranean(k) || k == dev.esiliw.aquarium.data.Climate.BWh;
+        if (dry && !forest) return n > (k == dev.esiliw.aquarium.data.Climate.BWh ? 0.0 : 0.45) ? COARSE_DIRT : null;
+        return null;
     }
 
     private static void setBlock(ChunkAccess chunk, int lx, int y, int lz, BlockState state) {

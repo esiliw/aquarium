@@ -26,6 +26,7 @@ Not yet ported: `/geotool` map UI and preview, climate/soil data, caves/ores tun
 - Land cover: © ESA WorldCover project 2021 / Contains modified Copernicus Sentinel data (2021) processed by ESA WorldCover consortium (CC BY 4.0)
 - Water: © [OpenStreetMap contributors](https://www.openstreetmap.org/copyright) (ODbL), tiles by [OpenFreeMap](https://openfreemap.org) using the [OpenMapTiles](https://openmaptiles.org) schema
 - Older worlds: NASADEM (NASA/JPL-Caltech), GEBCO 2019, ESA CCI Land Cover, ocean outlines, served by the Terrarium geo3 server by gegy
+- Climate: Beck, H. E. et al. (2023), High-resolution (1 km) Köppen-Geiger maps for 1901–2099 based on constrained CMIP6 projections, Scientific Data 10, 724 (CC BY 4.0), present-day map downsampled to 0.1° and bundled
 - Geocoding: OpenStreetMap Nominatim
 
 ## License

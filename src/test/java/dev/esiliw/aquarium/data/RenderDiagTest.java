@@ -26,6 +26,12 @@ public class RenderDiagTest {
                 new Place("geiseltal", 4, 5, 51.255, 11.82, 51.325, 12.00, 2),
                 new Place("niigata", 4, 5, 37.85, 138.95, 38.00, 139.20, 4),          // coast, river mouth, city
                 new Place("malmo", 10, 10, 55.57, 12.95, 55.63, 13.06, 1),            // default start: streets, rail, stations
+                new Place("california", 40, 40, 34.6, -121.6, 36.6, -119.4, 2),       // Mediterranean: woodland, chaparral, golden hills
+                new Place("spain", 100, 100, 36.5, -7.5, 42.5, 0.5, 2),               // Mediterranean + steppe interior
+                new Place("germany", 100, 100, 47.5, 6.0, 54.5, 14.5, 2),             // mixed forest, plains, uplands
+                new Place("japan", 100, 100, 33.0, 132.0, 39.0, 141.0, 2),            // humid subtropical vs mountains
+                new Place("central_asia", 400, 400, 36.0, 50.0, 50.0, 80.0, 2),       // cold desert, steppe
+                new Place("scandinavia", 400, 400, 55.0, 4.0, 71.0, 31.0, 2),         // taiga, tundra, mixed forest
                 new Place("halle_rail", 4, 5, 51.465, 11.96, 51.49, 12.00, 1),        // rail hub, trams
                 new Place("geirangerfjord", 4, 5, 62.06, 6.95, 62.16, 7.25, 4),       // fjord, steep mountains
                 new Place("venice_lagoon", 4, 5, 45.35, 12.20, 45.55, 12.50, 4),      // lagoon, islands
@@ -119,8 +125,35 @@ public class RenderDiagTest {
             }
         }
         ImageIO.write(fin, "png", new File(out, p.name + "_final.png"));
+        BufferedImage bio = new BufferedImage(w, h, BufferedImage.TYPE_INT_RGB);
+        java.util.Map<String, Integer> legend = new java.util.TreeMap<>();
+        for (int j = 0; j < h; j++) {
+            for (int i = 0; i < w; i++) {
+                TerrainModel.Column c = cols[i + j * w];
+                double lat = proj.lat(bz0 + j * p.step + 0.5), lon = proj.lon(bx0 + i * p.step + 0.5);
+                String b = dev.esiliw.aquarium.world.EarthBiomes.select(c.cover(), c.elevation(), lat, c.ocean(), Climate.at(lat, lon)).location().getPath();
+                int rgb = c.lake() ? 0x4080ff : biomeColor(b);
+                bio.setRGB(i, j, rgb);
+                legend.merge(b, 1, Integer::sum);
+            }
+        }
+        ImageIO.write(bio, "png", new File(out, p.name + "_biomes.png"));
+        System.out.println("DIAG biomes " + p.name + ": " + legend);
         ImageIO.write(raw, "png", new File(out, p.name + "_data.png"));
         System.out.println("DIAG " + String.format(Locale.ROOT, "rendered %s %dx%d (step %d) blocks x %d..%d z %d..%d", p.name, w, h, p.step, bx0, bx1, bz0, bz1));
+    }
+
+    static int biomeColor(String b) {
+        return switch (b) {
+            case "plains" -> 0x8db360; case "meadow" -> 0xa8d878; case "forest" -> 0x2f7a2f; case "mixed_forest" -> 0x3a6e4a;
+            case "birch_forest" -> 0x5aa05a; case "taiga" -> 0x2f5f4f; case "snowy_taiga" -> 0x9fb8b0; case "old_growth_spruce_taiga" -> 0x1f4f3f;
+            case "subtropical_forest" -> 0x1f9f5f; case "jungle", "sparse_jungle" -> 0x0f7f2f; case "savanna" -> 0xbdb25f;
+            case "mediterranean_woodland" -> 0x8f9f3f; case "chaparral" -> 0xa08f4f; case "steppe" -> 0xd8c878; case "desert" -> 0xf0e0a0;
+            case "cold_desert" -> 0xb8a890; case "badlands" -> 0xc06030; case "tundra" -> 0x8a9a7a; case "snowy_plains" -> 0xf0f0f0;
+            case "swamp", "mangrove_swamp" -> 0x4f6f3f; case "stony_peaks", "windswept_hills" -> 0x8a8a8a;
+            case "frozen_peaks", "jagged_peaks", "snowy_slopes", "ice_spikes" -> 0xe0e8f0; case "river" -> 0x4080ff;
+            default -> b.contains("ocean") ? 0x203a80 : 0xff00ff;
+        };
     }
 
     static int mix(int a, int b, double t) {

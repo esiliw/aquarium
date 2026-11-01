@@ -87,7 +87,7 @@ public final class WorldCover {
     public Cover cover(double lat, double lon) {
         int c = this.classAt(lat, lon);
         return switch (c) {
-            case 10 -> Math.abs(lat) < 23 ? Cover.BROADLEAF_EVERGREEN : Math.abs(lat) > 52 ? Cover.NEEDLEAF_EVERGREEN : Cover.MIXED_LEAF_TYPE;
+            case 10 -> Cover.MIXED_LEAF_TYPE;          // WorldCover has no leaf type: the climate decides what kind of forest
             case 20 -> Cover.SHRUBLAND;
             case 30 -> Cover.GRASSLAND;
             case 40 -> Cover.RAINFED_CROPLAND;

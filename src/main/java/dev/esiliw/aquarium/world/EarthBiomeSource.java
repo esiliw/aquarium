@@ -61,6 +61,6 @@ public class EarthBiomeSource extends BiomeSource {
             if (cover == Cover.WATER) cover = this.data.water(lat, lon).fraction() >= 0.5 ? Cover.WATER : Cover.GRASSLAND;
             e = Math.max(e, 0.5);
         }
-        return this.holders.get(EarthBiomes.select(cover, e, lat, ocean));
+        return this.holders.get(EarthBiomes.select(cover, e, lat, ocean, dev.esiliw.aquarium.data.Climate.at(lat, lon)));
     }
 }

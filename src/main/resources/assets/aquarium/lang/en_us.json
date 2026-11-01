@@ -14,5 +14,11 @@
   "aquarium.customize.data.terrarium": "Terrarium server (gegy)",
   "aquarium.customize.ways": "Road & rail guide (OSM, open data only)",
   "aquarium.customize.buildings": "Buildings as cobblestone boxes (OSM)",
-  "biome.aquarium.mixed_forest": "Mixed Forest"
+  "biome.aquarium.mixed_forest": "Mixed Forest",
+  "biome.aquarium.mediterranean_woodland": "Mediterranean Woodland",
+  "biome.aquarium.chaparral": "Chaparral",
+  "biome.aquarium.steppe": "Steppe",
+  "biome.aquarium.cold_desert": "Cold Desert",
+  "biome.aquarium.tundra": "Tundra",
+  "biome.aquarium.subtropical_forest": "Subtropical Forest"
 }
