@@ -34,9 +34,9 @@ grain("black_sand", "#2b282a", [("#3b3739", .22), ("#1d1b1d", .2), ("#474244", .
 
 
 def salt_top():
-    """white salt crust broken into polygons with slightly raised grey-beige rims (tileable)"""
-    r = random.Random(7)
-    seeds = [(r.uniform(0, 16), r.uniform(0, 16)) for _ in range(6)]
+    """white salt crust with a few thin, faint crack lines between big polygons (tileable)"""
+    r = random.Random(17)
+    seeds = [(3.2, 4.1), (11.6, 2.7), (7.4, 11.8), (14.2, 12.9)]
     im = Image.new("RGBA", (16, 16))
     for y in range(16):
         for x in range(16):
@@ -46,12 +46,11 @@ def salt_top():
                     for oy in (-16, 0, 16):
                         d.append(((x + .5 - sx - ox) ** 2 + (y + .5 - sy - oy) ** 2) ** .5)
             d.sort()
-            edge = d[1] - d[0] < 1.1
             n = r.random()
-            if edge:
-                c = "#c9c2b4" if n < .7 else "#b8b0a0"
+            if d[1] - d[0] < .75:
+                c = "#d9d3c7" if n < .8 else "#cec7b8"           # crack: a slightly raised beige ridge
             else:
-                c = "#f2f0ea" if n < .55 else ("#e8e5dd" if n < .9 else "#fbfaf7")
+                c = "#f3f1ec" if n < .6 else ("#eae7e0" if n < .92 else "#fbfaf8")
             im.putpixel((x, y), hexc(c))
     im.save(f"{B}/salt_crust_top.png")
 

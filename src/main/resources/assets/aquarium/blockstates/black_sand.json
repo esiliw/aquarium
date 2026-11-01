@@ -1,7 +1,21 @@
 {
   "variants": {
-    "": {
-      "model": "aquarium:block/black_sand"
-    }
+    "": [
+      {
+        "model": "aquarium:block/black_sand"
+      },
+      {
+        "model": "aquarium:block/black_sand",
+        "y": 90
+      },
+      {
+        "model": "aquarium:block/black_sand",
+        "y": 180
+      },
+      {
+        "model": "aquarium:block/black_sand",
+        "y": 270
+      }
+    ]
   }
 }

@@ -1,7 +1,21 @@
 {
   "variants": {
-    "": {
-      "model": "aquarium:block/salt_crust"
-    }
+    "": [
+      {
+        "model": "aquarium:block/salt_crust"
+      },
+      {
+        "model": "aquarium:block/salt_crust",
+        "y": 90
+      },
+      {
+        "model": "aquarium:block/salt_crust",
+        "y": 180
+      },
+      {
+        "model": "aquarium:block/salt_crust",
+        "y": 270
+      }
+    ]
   }
 }
