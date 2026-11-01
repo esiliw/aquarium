@@ -45,32 +45,44 @@ def bark(w, p):
     r = random.Random(sum(map(ord, w)))
     im = new()
     if w == "palm":
-        # fibrous trunk with ring scars where old fronds fell off
+        # the stubs of old leaf bases in a diagonal lattice, like a pineapple: each stub light on top, shaded below
+        groove, shade, mid, top = "#6a543c", "#a48a63", ["#c9b08a", "#bfa57e", "#cdb592"], "#e2cfab"
         for y in range(16):
             for x in range(16):
-                c = pick(r, p["bark"])
-                if y % 4 == 3:
-                    c = p["bark_dark"] if (x + y // 4) % 5 != 0 else p["bark"][0]
-                elif y % 4 == 2 and r.random() < .3:
-                    c = p["bark_light"]
+                a, b = (x + y) % 8, (x - y) % 8
+                if a == 0 or b == 0:
+                    c = groove
+                else:
+                    # a counts up from the top-left edge, 8-b up from the top-right edge: near both = top of the stub
+                    up = min(a, 8 - b)
+                    down = min(8 - a, b)
+                    stub = ((x + y) // 8 * 3 + (x - y) // 8 * 5) % 3          # which stub: each gets its own tint
+                    tone = [["#c9b08a", "#cdb592"], ["#bfa57e", "#c4ab84"], ["#d2bb96", "#c9b08a"]][stub]
+                    if up <= 1:
+                        c = top
+                    elif down <= 1 or down == 2 and r.random() < .5:
+                        c = shade
+                    else:
+                        c = pick(r, tone)
+                        if (x * 7 + stub) % 5 == 0 and r.random() < .6:
+                            c = shade                               # little vertical cracks
                 im.putpixel((x, y), hexc(c))
     else:
-        # smooth bark peeling in long patches: grey, cream and pinkish
-        cols = [r.randrange(len(p["bark"])) for _ in range(16)]
-        for x in range(16):
-            run = 0
-            ci = cols[x]
-            for y in range(16):
-                if run <= 0:
-                    ci = r.randrange(len(p["bark"])) if r.random() < .5 else ci
-                    run = r.randint(3, 8)
-                run -= 1
-                c = p["bark"][ci]
-                if r.random() < .08:
-                    c = p["bark_dark"]
-                elif r.random() < .06:
-                    c = p["bark_light"]
-                im.putpixel((x, y), hexc(c))
+        # pale smooth gum bark with long vertical streaks where it peels, a few rainbow tints
+        base = ["#e3dccb", "#d9d2c0", "#cfcbc0", "#e8e2d3"]
+        streaks = ["#a9b0b0", "#b8bdb8", "#c9a497", "#d39a62", "#a6b77a", "#9fa7a6"]
+        for y in range(16):
+            for x in range(16):
+                im.putpixel((x, y), hexc(pick(r, base, [4, 3, 2, 1])))
+        for _ in range(9):
+            x = r.randrange(16)
+            y0 = r.randrange(16)
+            col = pick(r, streaks, [4, 3, 2, 2, 1, 2])
+            for k in range(r.randint(4, 11)):
+                im.putpixel((x, (y0 + k) % 16), hexc(col))
+                if r.random() < .25 and x + 1 < 16:
+                    im.putpixel((x + 1, (y0 + k) % 16), hexc(col))
+            im.putpixel((x, (y0 - 1) % 16), hexc("#8a7d6c"))      # the curled edge where the bark lifts
     return im
 
 
@@ -97,6 +109,14 @@ def log_top(w, p, stripped):
 def stripped(w, p):
     r = random.Random(sum(map(ord, w)) + 3)
     im = new()
+    if w == "eucalyptus":
+        # fresh underbark: smooth cream with faint green and orange
+        for x in range(16):
+            base = pick(r, ["#e6dcc3", "#dfd3b6", "#e9e1cc"])
+            for y in range(16):
+                c = base if r.random() < .8 else pick(r, ["#d6c99c", "#e0c6a4", "#cfd3ad"])
+                im.putpixel((x, y), hexc(c))
+        return im
     for x in range(16):
         base = pick(r, p["inner"])
         for y in range(16):
