@@ -485,23 +485,25 @@ def coconut():
                 c = "#4a321d"                                     # fibres
             im.putpixel((x, y), hexc(c))
     im.save(f"{B}/coconut.png")
+    # drawn like the vanilla apple: round body, darker outline in the same colour, lit from the top left
     item = grid([
         "................",
-        "................",
-        "................",
-        ".......sS.......",
-        ".....hHHHHh.....",
-        "....hHhHHhHh....",
-        "...hHhHHhHHHh...",
-        "...HhHHhHHhHH...",
-        "...hHHhHHhHHd...",
-        "...HHhHHhHHdd...",
-        "...hHHhHHhddd...",
-        "....hHHhHddd....",
-        ".....dHhddd.....",
-        "......dddd......",
-        "................",
-        "................"], {"h": "#86603a", "H": "#6b4a2b", "d": "#4a321d", "s": "#5a7a2e", "S": "#46621f"})
+        "........s.......",
+        ".......gs.......",
+        ".....OOsOOO.....",
+        "...OOLLMMMMOO...",
+        "..OLHHLMMfMDDO..",
+        "..OLHSLMMMMMDO..",
+        ".OLLHLMfMMMMDDO.",
+        ".OLLLMMMMMfMDDO.",
+        ".OMLMMfMMMMDDDO.",
+        ".OMMMMMMMfMDDDO.",
+        "..OMMfMMMMDDDO..",
+        "..OMMMMMDDDDDO..",
+        "...OODDDDDDOO...",
+        ".....OOOOOO.....",
+        "................"], {"O": "#3b2412", "D": "#5a3a20", "M": "#7a5232", "L": "#9a6c42", "H": "#c09060",
+                              "S": "#dcb581", "f": "#68452a", "s": "#6b5a2a", "g": "#5a7a2e"})
     item.save(f"{I}/coconut.png")
 
 
