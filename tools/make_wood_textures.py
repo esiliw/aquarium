@@ -335,8 +335,8 @@ def palm_door_full():
     """beach hut: bleached driftwood, louvred top half, darker weathered palm-wood frame"""
     r = random.Random(41)
     im = Image.new("RGBA", (16, 32), (0, 0, 0, 0))
-    frame, frame_d = ["#9a815c", "#8c7350", "#a68d66"], "#6e5a3e"
-    drift, drift_d, gap = ["#ddd0b0", "#d2c3a1", "#e6dcc0"], "#b9a888", "#7d6c52"
+    frame, frame_d = ["#a68a5c", "#9a7f53", "#b09466"], "#7f6744"
+    drift, drift_d, gap = WOOD["palm"]["planks"], WOOD["palm"]["grain"], "#8c7149"
     for y in range(32):
         for x in range(16):
             if x in (0, 15) or y in (0, 31) or y in (15, 16):
@@ -397,11 +397,11 @@ def palm_trapdoor():
     for y in range(16):
         for x in range(16):
             if x in (0, 15) or y in (0, 15):
-                c = pick(r, ["#9a815c", "#8c7350"])
+                c = pick(r, ["#a68a5c", "#9a7f53"])
             elif y % 3 == 0:
                 continue                                           # gaps between the slats
             else:
-                c = pick(r, ["#ddd0b0", "#d2c3a1", "#e6dcc0"])
+                c = pick(r, WOOD["palm"]["planks"])
             im.putpixel((x, y), hexc(c))
     return im
 
