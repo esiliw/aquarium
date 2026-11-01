@@ -54,6 +54,16 @@ public class EverestDiagTest {
                 }
             }
         }
+        // the row at 28.0 N: what each source says, row by row
+        EarthData data = model.data();
+        int zr = (int) Math.floor(proj.blockZ(28.0));
+        for (int z = zr - 4; z <= zr + 4; z++) {
+            int x = (int) proj.blockX(86.90);
+            double lat = proj.lat(z + 0.5), lon = proj.lon(x + 0.5);
+            TerrainModel.Column c = model.column(x, z);
+            System.out.println(String.format(java.util.Locale.ROOT, "DIAG everest row z %d lat %.6f data.e %.1f probe.e %.1f col.e %.1f top %d highest %d water %d lake %b",
+                    z, lat, data.elevation(lat, lon), aws.elevation(lat, lon), c.elevation(), c.top(), c.highest(), c.waterTop(), c.lake()));
+        }
         System.out.println("DIAG everest spikes " + spikes + " building columns " + buildings + " way columns " + ways + " " + wayCount + " water columns " + water);
     }
 }
