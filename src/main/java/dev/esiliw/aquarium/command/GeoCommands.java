@@ -77,7 +77,8 @@ public final class GeoCommands {
         EarthChunkGenerator g = earth(src);
         if (g == null) return 0;
         src.sendSuccess(() -> Component.literal("Searching for \"" + place + "\" ...").withStyle(ChatFormatting.GRAY), false);
-        CompletableFuture.supplyAsync(() -> dev.esiliw.aquarium.data.Geocoder.find(place), Aquarium.IO_EXECUTOR).thenAccept(result -> {
+        CompletableFuture.supplyAsync(() -> dev.esiliw.aquarium.data.Geocoder.findNear(place,
+                g.projection().lat(player.getZ()), g.projection().lon(player.getX())), Aquarium.IO_EXECUTOR).thenAccept(result -> {
             if (result == null) {
                 src.getServer().execute(() -> src.sendFailure(Component.literal("Couldn't find \"" + place + "\".")));
                 return;

@@ -37,10 +37,27 @@ public final class Geocoder {
         return new Place(lat, lon, null);
     }
 
-    /** looks a place name up; null if nothing was found or the service couldn't be reached. Blocking. */
+    /** looks a place name up anywhere; null if nothing was found or the service couldn't be reached. Blocking. */
     public static Place find(String query) {
+        return search(query, null);
+    }
+
+    /**
+     * looks a place name up near a point first (about 60 km around it), and only searches the whole world
+     * if nothing is found there - so "Klia" from Merseburg finds the stream, not a place on the other side of the planet.
+     */
+    public static Place findNear(String query, double lat, double lon) {
+        double dLat = 0.55, dLon = 0.55 / Math.max(0.1, Math.cos(Math.toRadians(lat)));
+        String box = String.format(java.util.Locale.ROOT, "&viewbox=%.4f,%.4f,%.4f,%.4f&bounded=1",
+                lon - dLon, Math.min(90, lat + dLat), lon + dLon, Math.max(-90, lat - dLat));
+        Place near = search(query, box);
+        return near != null ? near : search(query, null);
+    }
+
+    private static Place search(String query, String extra) {
         try {
-            String url = "https://nominatim.openstreetmap.org/search?format=json&limit=1&q=" + URLEncoder.encode(query, StandardCharsets.UTF_8);
+            String url = "https://nominatim.openstreetmap.org/search?format=json&limit=1&q=" + URLEncoder.encode(query, StandardCharsets.UTF_8)
+                    + (extra == null ? "" : extra);
             HttpRequest req = HttpRequest.newBuilder(URI.create(url))
                     .timeout(Duration.ofSeconds(15))
                     .header("User-Agent", "Aquarium/" + DataEnv.version() + " (Minecraft mod; github.com/esiliw/aquarium)")
