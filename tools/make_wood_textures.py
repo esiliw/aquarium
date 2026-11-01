@@ -33,11 +33,11 @@ WOOD = {
     "palm": dict(
         bark=["#8a7356", "#7d6749", "#958061"], bark_dark="#5b4934", bark_light="#a8926d",
         inner=["#d0bb8f", "#c4ad7f", "#dac7a0"], inner_dark="#a88f62",
-        planks=["#c9ae7c", "#bfa271", "#d3b98a"], seam="#8c7149", grain="#b0935f"),
+        planks=["#c9ae7c", "#bfa271", "#d3b98a"], seam="#a68a5c", grain="#b89b68"),
     "eucalyptus": dict(
-        bark=["#bdb8aa", "#d6cfba", "#a9a596", "#c6ac9c"], bark_dark="#86836f", bark_light="#e2dcc9",
+        bark=["#a9a497", "#cfc6ae", "#9a978a", "#c79f8c", "#b8a07f"], bark_dark="#7a776a", bark_light="#ddd4bd",
         inner=["#c98e6c", "#bf805f", "#d49c7b"], inner_dark="#9c5e40",
-        planks=["#a35f40", "#984f35", "#b06d4b"], seam="#6a3822", grain="#8a4a2e"),
+        planks=["#a35f40", "#984f35", "#b06d4b"], seam="#7f4329", grain="#8f4f33"),
 }
 
 
@@ -180,13 +180,13 @@ def leaves(w):
                     continue
                 im.putpixel((x, y), hexc(pick(r, greens, [4, 3, 2, 1])))
     else:
-        greens = ["#6f9a86", "#5f8a77", "#84ad99", "#4f7565"]
+        # gum leaves: dense blue-grey-green, a few small gaps
+        greens = ["#5b8a78", "#4c7a69", "#6d9c89", "#3f6858", "#7aa894"]
         for y in range(16):
             for x in range(16):
-                # narrow hanging leaves: vertical strokes, sparse
-                if (x % 3 == 2 and r.random() < .6) or r.random() < .12:
+                if r.random() < .14:
                     continue
-                im.putpixel((x, y), hexc(pick(r, greens, [4, 3, 2, 1])))
+                im.putpixel((x, y), hexc(pick(r, greens, [4, 4, 2, 2, 1])))
     return im
 
 
