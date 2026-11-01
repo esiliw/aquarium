@@ -80,48 +80,39 @@ GOLD = ["#d9b84a", "#c9a23b", "#e6ca62", "#b38c2f"]
 GRAIN = ["#e8d27a", "#f0de92", "#d4b85c"]
 
 
-def blades(im, r, x, y0, y1, cols, lean=0):
-    """a leaf blade from y0 (bottom) up to y1, drifting sideways by lean"""
-    for y in range(y0, y1 - 1, -1):
-        t = (y0 - y) / max(1, y0 - y1)
-        xx = int(round(x + lean * t * t))
-        if 0 <= xx < 16:
-            im.putpixel((xx, y), hexc(r.choice(cols)))
+STALKS = [(2, -1), (4, 1), (6, -1), (9, 1), (11, -1), (13, 1)]   # x and which way the leaf tips curl
+HEIGHT = {0: 19, 1: 24, 2: 30, 3: 30}                           # of 32 px; the water surface is at 16
+
+
+def plant(stage):
+    """one rice plant, two blocks tall (16x32), bottom half under water"""
+    r = random.Random(200 + stage)
+    im = Image.new("RGBA", (16, 32), (0, 0, 0, 0))
+    for n, (x, d) in enumerate(STALKS):
+        h = HEIGHT[stage] - (n % 3)
+        top = 32 - h
+        for y in range(31, top - 1, -1):
+            t = (31 - y) / h                      # 0 at the base, 1 at the tip
+            xx = x + (d if t > .8 and stage >= 2 else 0)
+            if stage == 3:
+                col = r.choice(YELLOW_GREEN) if y > 20 else r.choice(GOLD[:2])
+            else:
+                col = r.choice(GREEN[:3]) if y > 8 else GREEN[2]
+            im.putpixel((xx, y), hexc(col))
+        if stage == 3 and n % 2 == 1:
+            # a grain head arching over and hanging beside the stalk
+            hx = x + d
+            im.putpixel((hx, top), hexc(GOLD[2]))
+            for k in range(1, 7):
+                im.putpixel((hx + d, top + k), hexc(GRAIN[k % 3]))
+                if 2 <= k <= 5:
+                    im.putpixel((hx, top + k), hexc(GRAIN[(k + 1) % 3] if k % 2 else "#c9a23b"))
+    return im
 
 
 def rice(stage, half):
-    r = random.Random(100 + stage * 10 + (0 if half == "lower" else 5))
-    im = Image.new("RGBA", (16, 16), (0, 0, 0, 0))
-    xs = [1, 3, 5, 7, 8, 10, 12, 14]
-    if half == "lower":
-        # stems in the water: young plants are short, older ones fill the block
-        top = {0: 6, 1: 0, 2: 0, 3: 0}[stage]
-        cols = YELLOW_GREEN if stage == 3 else GREEN
-        for x in xs:
-            blades(im, r, x, 15, top + r.randint(0, 2), cols, r.choice([-1, 0, 0, 1]))
-    else:
-        if stage == 0:
-            return im
-        if stage == 1:
-            for x in xs[::2]:
-                blades(im, r, x, 15, 9 + r.randint(0, 3), GREEN, r.choice([-1, 1]))
-        elif stage == 2:
-            for x in xs:
-                blades(im, r, x, 15, 2 + r.randint(0, 4), GREEN, r.choice([-2, -1, 1, 2]))
-        else:
-            # ripe: yellowing leaves low down, three stalks whose heavy grain heads bend over to one side
-            for x in [1, 5, 10, 14]:
-                blades(im, r, x, 15, 9 + r.randint(0, 2), YELLOW_GREEN + GOLD[:1], r.choice([-1, 1]))
-            for x, d in [(3, 1), (8, -1), (12, 1)]:
-                for y in range(15, 2, -1):
-                    im.putpixel((x, y), hexc(GOLD[1] if y > 8 else GOLD[0]))
-                # head: arches over at the top, grains hanging in a column beside the stalk
-                im.putpixel((x + d, 2), hexc(GOLD[2]))
-                for y in range(3, 9):
-                    im.putpixel((x + d, y), hexc(GRAIN[y % 3]))
-                    if 4 <= y <= 7:
-                        im.putpixel((x + 2 * d, y), hexc(GRAIN[(y + 1) % 3] if y % 2 else "#c9a23b"))
-    return im
+    im = plant(stage)
+    return im.crop((0, 0, 16, 16)) if half == "upper" else im.crop((0, 16, 16, 32))
 
 
 for st in range(4):
@@ -148,19 +139,34 @@ def item_rice():
 
 
 def item_bowl():
-    """a wooden bowl heaped with white rice"""
+    """a wide wooden bowl (the vanilla bowl shape) heaped with white rice"""
     im = Image.new("RGBA", (16, 16), (0, 0, 0, 0))
-    r = random.Random(6)
-    wood = ["#7a5230", "#8f6239", "#694626"]
-    for y in range(9, 14):
-        w = {9: 7, 10: 7, 11: 6, 12: 5, 13: 3}[y]
-        for x in range(8 - w, 8 + w):
-            c = "#4f331b" if y == 13 or x in (8 - w, 8 + w - 1) else r.choice(wood)
+    OUT, DARK, MID, LIGHT, HI = "#2b1d0c", "#4a3214", "#5f421a", "#7a5824", "#94702f"
+    body = {9: (2, 13), 10: (3, 12), 11: (4, 11), 12: (6, 9)}
+    for y, (x0, x1) in body.items():
+        for x in range(x0, x1 + 1):
+            if y == 12 or x == x0 and y >= 11 or x == x1:
+                c = OUT
+            elif y == 10 or y == 11 and 6 <= x <= 9:
+                c = LIGHT if 4 <= x <= 10 else MID
+            else:
+                c = MID if x < 9 else DARK
             im.putpixel((x, y), hexc(c))
-    for y in range(4, 10):
-        w = {4: 2, 5: 4, 6: 5, 7: 6, 8: 6, 9: 7}[y]
-        for x in range(8 - w, 8 + w):
-            c = r.choice(["#fbfaf6", "#f1efe8", "#e4e0d6"]) if y < 9 else "#d8d3c6"
+    for x in range(3, 12):
+        im.putpixel((x, 9), hexc(HI if 4 <= x <= 8 else LIGHT))          # front rim catching the light
+    im.putpixel((2, 9), hexc(DARK))
+    im.putpixel((13, 9), hexc(OUT))
+    for y, (x0, x1) in {6: (3, 12), 7: (2, 13), 8: (2, 13)}.items():  # back rim around the rice
+        im.putpixel((x0, y), hexc(DARK))
+        im.putpixel((x1, y), hexc(OUT if y > 6 else DARK))
+    RICE = ["#f8f6f0", "#eeebe3", "#e2ded3"]
+    heap = {4: (6, 9), 5: (4, 11), 6: (4, 11), 7: (3, 12), 8: (3, 12)}
+    r = random.Random(6)
+    for y, (x0, x1) in heap.items():
+        for x in range(x0, x1 + 1):
+            c = RICE[0] if x < 8 and y < 7 else r.choice(RICE)
+            if y == 8 or x == x1:
+                c = "#d0cabc"                                          # shade at the right and where it meets the rim
             im.putpixel((x, y), hexc(c))
     im.save(f"{I}/rice_bowl.png")
 
