@@ -200,25 +200,42 @@ def door_item(w, p):
 
 
 def leaves(w):
+    """vanilla-style leaves: four shades in little clumps, each lit above and shaded below, with gaps between them.
+    Palm clumps are stretched sideways like fronds, eucalyptus clumps hang down like gum leaves. Tileable."""
     r = random.Random(sum(map(ord, w)) + 17)
-    im = new()
     if w == "palm":
-        greens = ["#4f8f2c", "#5fa236", "#3d7524", "#6db540"]
-        for y in range(16):
-            for x in range(16):
-                # long frond strips running diagonally, with gaps between them
-                band = (x + 2 * y) % 8
-                if band in (6, 7) and r.random() < .7:
-                    continue
-                im.putpixel((x, y), hexc(pick(r, greens, [4, 3, 2, 1])))
+        light, mid, dark, deep = "#6db540", "#55a032", "#3f7d25", "#2e5f1c"
+        sx, sy = 2.6, 1.4          # wide, flat clumps
     else:
-        # gum leaves: dense blue-grey-green, a few small gaps
-        greens = ["#5b8a78", "#4c7a69", "#6d9c89", "#3f6858", "#7aa894"]
-        for y in range(16):
-            for x in range(16):
-                if r.random() < .14:
-                    continue
-                im.putpixel((x, y), hexc(pick(r, greens, [4, 4, 2, 2, 1])))
+        light, mid, dark, deep = "#8ab8a2", "#6d9c89", "#4f7565", "#3c5d50"
+        sx, sy = 1.4, 2.6          # narrow, hanging clumps
+    centres = []
+    for gy in range(4):
+        for gx in range(4):
+            centres.append((gx * 4 + 1.5 + r.uniform(-1, 1) + (2 if gy % 2 else 0), gy * 4 + 1.5 + r.uniform(-1, 1)))
+    im = new()
+    for y in range(16):
+        for x in range(16):
+            best = None
+            for cx, cy in centres:
+                for ox in (-16, 0, 16):
+                    for oy in (-16, 0, 16):
+                        dx, dy = x + .5 - (cx + ox), y + .5 - (cy + oy)
+                        d = abs(dx) / sx + abs(dy) / sy
+                        if best is None or d < best[0]:
+                            best = (d, dx, dy)
+            d, dx, dy = best
+            if d > 1.5:
+                continue                                        # gap between clumps
+            if d > 1.25:
+                c = deep                                        # clump edge
+            elif dy < -.3 or (dx < -.3 and dy < .3):
+                c = light                                       # lit upper side
+            elif dy > .7:
+                c = dark                                        # shaded underside
+            else:
+                c = mid
+            im.putpixel((x, y), hexc(c))
     return im
 
 
