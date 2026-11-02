@@ -2,7 +2,7 @@
 
 A Fabric **1.20.1** port of [Terrarium](https://github.com/gegy1000/Terrarium) by gegy: a world type that generates a replica of the Earth from real elevation, land-cover and map data, downloaded as you explore and cached locally.
 
-## Status (0.9.0)
+## Status (0.9.1)
 - World type (Create World → More → World Type): **Earth (Aquarium)**, then **Customize** to set
   - scale 1:N (default 1:10) and metres per block for height (default auto: like the scale, but at least 5 so Everest fits)
   - where the world starts: a place name or `lat, lon`, looked up like `/geotp` (empty = Malmö)

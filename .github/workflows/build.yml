@@ -18,6 +18,36 @@ jobs:
         run: |
           set -o pipefail
           ./gradlew build --stacktrace 2>&1 | tee build.log
+      - uses: actions/setup-java@v5
+        id: jdk17
+        with:
+          java-version: '17'
+          distribution: 'temurin'
+      - name: server smoke test
+        # start a real Fabric 1.20.1 server with an Earth world: catches worldgen files that fail to load, crashes on
+        # world creation and dedicated-server problems before anything is released
+        env:
+          JAVA17: ${{ steps.jdk17.outputs.path }}
+        run: |
+          L=$(grep '^loader_version' gradle.properties | cut -d= -f2)
+          F=$(grep '^fabric_api_version' gradle.properties | cut -d= -f2)
+          I=$(curl -sSf https://meta.fabricmc.net/v2/versions/installer | jq -r '.[0].version')
+          mkdir -p smoke/mods && cd smoke
+          curl -sSfL -o server.jar "https://meta.fabricmc.net/v2/versions/loader/1.20.1/$L/$I/server/jar"
+          curl -sSfL -o mods/fabric-api.jar "https://maven.fabricmc.net/net/fabricmc/fabric-api/fabric-api/$F/fabric-api-$F.jar"
+          cp "$(ls ../build/libs/*.jar | grep -v sources | head -1)" mods/
+          echo eula=true > eula.txt
+          printf 'level-type=aquarium:earth\nonline-mode=false\n' > server.properties
+          "$JAVA17/bin/java" -Xmx3G -jar server.jar nogui > server.log 2>&1 &
+          PID=$!
+          for i in $(seq 1 180); do
+            grep -q 'Done (' server.log && break
+            kill -0 $PID 2>/dev/null || break
+            sleep 5
+          done
+          kill $PID 2>/dev/null || true
+          grep -E 'Done \(|ERROR|Exception|Caused by|Failed|crash' server.log | head -60 | while IFS= read -r line; do echo "::warning title=server::${line//%/%25}"; done
+          grep -q 'Done (' server.log
       - name: data diagnostics
         if: success()
         continue-on-error: true
